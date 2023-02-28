@@ -49,7 +49,7 @@ INCLUDES = $(shell echo *.h)
 
 ############### Rules ###############
 
-all: ppmdiff
+all: arith
 
 
 ## Compile step (.c files -> .o files)
@@ -61,9 +61,11 @@ all: ppmdiff
 
 ## Linking step (.o -> executable program)
 
-ppmdiff: ppmdiff.o uarray2b.o uarray2.o a2plain.o 
-	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+# ppmdiff: uarray2b.o uarray2.o a2plain.o 
+# 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 	
+arith: 40image.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 uarray2.o: uarray2.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c $< -o $@

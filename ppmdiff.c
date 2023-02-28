@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
                                 A2Methods_Object *pixel1 = uarray2_methods_plain->at(ppm1, i, j);
                                 A2Methods_Object *pixel2 = uarray2_methods_plain->at(ppm2, i, j);
 
-                                
+                                /* convert from scaled to float */
                                 double r1 = (double) ((struct Pnm_rgb*) pixel1)->red / (double) image1->denominator;
                                 double g1 = (double) ((struct Pnm_rgb*) pixel1)->green / (double) image1->denominator; 
                                 double b1 = (double) ((struct Pnm_rgb*) pixel1)->blue / (double) image1->denominator;
