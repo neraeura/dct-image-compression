@@ -11,6 +11,10 @@
 
 typedef A2Methods_UArray2 A2;
 
+typedef struct Pnm_color_flt {
+        float red, green, blue;
+} Pnm_color_flt;
+
 void compress40(FILE *input);
 void decompress40(FILE *input);
 
@@ -59,6 +63,8 @@ int main(int argc, char *argv[])
 void compress40(FILE *input)
 {
         A2Methods_T methods = uarray2_methods_plain;
+        assert(methods != NULL);
+
         Pnm_ppm ppm;
         ppm = Pnm_ppmread(input, methods);
         (void) input;
@@ -66,10 +72,37 @@ void compress40(FILE *input)
         A2Methods_UArray2 original_image = ppm->pixels; 
         A2Methods_UArray2 processed_image = imageProcessing(original_image, methods);
         A2Methods_UArray2 fltRGB = RGBtoFloat(processed_image, methods);
-        (void) fltRGB;
+        RGBtoComponentVideo(fltRGB, methods);
 
+        /// Start decompressing here
+
+        // printf("\nNow decompressing\n");
+        
+        ComponentVideotoRGB(fltRGB, methods);
         A2Methods_UArray2 decompressed_image = RGBtoInt(fltRGB, methods);
-        writeDecompressedImage(decompressed_image, methods);
+        assert(decompressed_image != NULL);
+       
+
+        Pnm_ppm decompressed_ppm = malloc(sizeof(*decompressed_ppm));
+
+        decompressed_ppm->methods = methods;
+        decompressed_ppm->width = methods->width(decompressed_image);
+        decompressed_ppm->height = methods->height(decompressed_image);
+        decompressed_ppm->pixels = decompressed_image;
+        decompressed_ppm->denominator = 255; 
+        
+        Pnm_ppmwrite(stdout, decompressed_ppm);
+        // methods->free(&decompressed_image);
+        // methods->free(&original_image);
+        // methods->free(&processed_image);
+        // Pnm_ppmfree(&decompressed_ppm); 
+}
+
+
+
+void decompress40(FILE *input)
+{
+        (void) input;
 }
 
 // void decompress40(FILE *input)

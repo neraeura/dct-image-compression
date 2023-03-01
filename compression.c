@@ -11,20 +11,23 @@
 
 typedef A2Methods_UArray2 A2;
 
-typedef struct Pnm_rgb_flt {
+/* When converted to component video format, green 
+   stores the lum of the image, red stores the red 
+   component, and blue stored the blue component */
+typedef struct Pnm_color_flt {
         float red, green, blue;
-} Pnm_rgb_flt;
+} *Pnm_color_flt;
 
 
 
 void *create_flt_pixel(float red, float green, float blue)
 {
-        Pnm_rgb_flt *temp = malloc(sizeof(Pnm_rgb_flt));
-        assert(temp);
-        temp->red = red;
-        temp->green = green;
-        temp->blue = blue;
-        return temp;
+        Pnm_color_flt pixel = malloc(sizeof(*pixel));
+        assert(pixel != NULL);
+        pixel->red = red;
+        pixel->green = green;
+        pixel->blue = blue;
+        return pixel;
 }
 
 A2Methods_UArray2
@@ -35,24 +38,26 @@ RGBtoFloat(A2Methods_UArray2 image, A2Methods_T methods)
 
         
         A2Methods_UArray2 fltRGB = methods->new(width, height, 
-                                                sizeof(struct Pnm_rgb_flt));
+                                                sizeof(struct Pnm_color_flt));
 
         for (int col = 0; col < width; col++) {
                 for (int row = 0; row < height; row++) {
                         A2Methods_Object *pixel = methods->at(image, col, row);
 
                         /* convert from scaled to float */
-                        float red = (float) ((struct Pnm_rgb*) pixel)->red;
-                        float green = (float) ((struct Pnm_rgb*) pixel)->green;
-                        float blue = (float) ((struct Pnm_rgb*) pixel)->blue;
+                        float red = (float) ((Pnm_rgb) pixel)->red;
+                        float green = (float) ((Pnm_rgb) pixel)->green;
+                        float blue = (float) ((Pnm_rgb) pixel)->blue;
                         
                         float flt_red = red / (float) ((Pnm_ppm) image)->denominator;
                         float flt_green = green / (float) ((Pnm_ppm) image)->denominator; 
                         float flt_blue = blue / (float) ((Pnm_ppm) image)->denominator;
 
-                        void *newpixel = methods->at(fltRGB, col, row);
-                        newpixel = create_flt_pixel(flt_red, flt_green, flt_blue);
-                        printf("row:%d...%lf\n", row, ((struct Pnm_rgb_flt*) newpixel)->red);
+                        Pnm_color_flt newpixel = methods->at(fltRGB, col, row);
+                        *newpixel = *((Pnm_color_flt) create_flt_pixel(flt_red, flt_green, flt_blue));
+                        // printf("pixel value....%lf\n", ((Pnm_color_flt)newpixel)->blue);
+                        
+                        
                 }
         }
         return fltRGB;
@@ -73,7 +78,7 @@ imageProcessing(A2Methods_UArray2 original_image, A2Methods_T methods)
                                                         sizeof(struct Pnm_rgb));
 
 
-                printf("Im here");
+                printf("Im here on line 81\n");
                 for (int col = 0; col < width; col++) { 
                         for (int row = 0; row < height; row++) { 
                                 *((struct Pnm_rgb*) methods->at(trimmed_image, 
@@ -86,4 +91,31 @@ imageProcessing(A2Methods_UArray2 original_image, A2Methods_T methods)
 
         /* else, just return the A2 object */
         return original_image;
+}
+
+
+void
+RGBtoComponentVideo(A2Methods_UArray2 image, A2Methods_T methods)
+{
+        int width = methods->width(image);
+        int height = methods->height(image);
+
+        for (int col = 0; col < width; col++) {
+                for (int row = 0; row < height; row++) {
+                        Pnm_color_flt pixel = (Pnm_color_flt) methods->at(image, col, row);
+                        float red = (float) ((Pnm_color_flt) pixel)->red;
+                        float green = (float) ((Pnm_color_flt) pixel)->green;
+                        float blue = (float) ((Pnm_color_flt) pixel)->blue;
+
+                        float y = 0.299 * red + 0.587 * green + 0.114 * blue;
+                        float pb = -0.168736 * red - 0.331264 * green 
+                                                                + 0.114 * blue;
+                        float pr = 0.5 * red - 0.418688 * green - 0.081312 * blue;
+
+
+                        pixel->red = pr;
+                        pixel->blue = pb;
+                        pixel->green = y;
+                }
+        }
 }

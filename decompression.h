@@ -8,6 +8,9 @@
 #include "pnm.h"
 
 
-void writeDecompressedImage(A2Methods_UArray2 decompressed, A2Methods_T methods);
+void readHeader(FILE *in);
+
+void
+ComponentVideotoRGB(A2Methods_UArray2 image, A2Methods_T methods);
 
 A2Methods_UArray2 RGBtoInt(A2Methods_UArray2 image, A2Methods_T methods);
