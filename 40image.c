@@ -9,7 +9,6 @@
 #include "decompression.h"
 #include "compression.h"
 
-typedef A2Methods_UArray2 A2;
 
 typedef struct Pnm_color_flt {
         float red, green, blue;
@@ -62,40 +61,64 @@ int main(int argc, char *argv[])
 
 void compress40(FILE *input)
 {
+        /* Get methods object in order to access a2 functions */
         A2Methods_T methods = uarray2_methods_plain;
+        // A2Methods_T methods2b = uarray2_methods_blocked;
+
+        A2Methods_mapfun *map = methods->map_default;
+        // A2Methods_mapfun *map2b = methods2b->map_default;
         assert(methods != NULL);
 
+        /* Create a ppm representing the original image */
         Pnm_ppm ppm;
         ppm = Pnm_ppmread(input, methods);
         (void) input;
 
+       /***************COMPRESSION STARTS BELOW:*******************/
+
+        /* Create an array 'original_image' that stores the pixels in the ppm */
         A2Methods_UArray2 original_image = ppm->pixels; 
-        A2Methods_UArray2 processed_image = imageProcessing(original_image, methods);
-        A2Methods_UArray2 fltRGB = RGBtoFloat(processed_image, methods);
-        RGBtoComponentVideo(fltRGB, methods);
 
-        /// Start decompressing here
+        /* Pass this image to imageProcessing, so it can be trimmed */
+        A2Methods_UArray2 processed_image = imageProcessing(original_image, map, methods);
 
-        // printf("\nNow decompressing\n");
+        /* Change the pixel representation from scaled RGB to float */
+        A2Methods_UArray2 fltRGB_image = RGBtoFloat(processed_image, map, methods,
+                                                                ppm->denominator);
+
+        /* Change color space from RGB to Component Video */
+        A2Methods_UArray2 component_image = RGBtoComponentVideo(fltRGB_image,
+                                                                map, methods);
+
+       /***************DECOMPRESSION STARTS BELOW:*******************/
+
+        /* Change color space from Component Video to RGB */
+        A2Methods_UArray2 RGB_image = ComponentVideotoRGB(component_image,
+                                                                map, methods);
+
+        /* Change pixel representation from RGB floating point representation to scaled integer */
+        A2Methods_UArray2 converted_image = RGBtoInt(RGB_image, map, methods);
         
-        ComponentVideotoRGB(fltRGB, methods);
-        A2Methods_UArray2 decompressed_image = RGBtoInt(fltRGB, methods);
-        assert(decompressed_image != NULL);
-       
-
+        /* Create a fake decompressed ppm for testing purposes */
         Pnm_ppm decompressed_ppm = malloc(sizeof(*decompressed_ppm));
-
         decompressed_ppm->methods = methods;
-        decompressed_ppm->width = methods->width(decompressed_image);
-        decompressed_ppm->height = methods->height(decompressed_image);
-        decompressed_ppm->pixels = decompressed_image;
+        decompressed_ppm->width = methods->width(converted_image);
+        decompressed_ppm->height = methods->height(converted_image);
+        decompressed_ppm->pixels = converted_image;
         decompressed_ppm->denominator = 255; 
         
+        /* Write the decompressed image to standard output */
         Pnm_ppmwrite(stdout, decompressed_ppm);
         // methods->free(&decompressed_image);
-        // methods->free(&original_image);
-        // methods->free(&processed_image);
-        // Pnm_ppmfree(&decompressed_ppm); 
+
+
+        /* Free the compressed ppm */
+        //Pnm_ppmfree(&ppm);
+        /* Free the decompressed ppm */
+      //  methods->free(&converted_image);
+        Pnm_ppmfree(&decompressed_ppm); 
+
+
 }
 
 

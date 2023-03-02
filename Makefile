@@ -64,7 +64,7 @@ all: arith
 # ppmdiff: uarray2b.o uarray2.o a2plain.o 
 # 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 	
-arith: 40image.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o
+arith: 40image.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o pixels.o
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 uarray2.o: uarray2.c $(INCLUDES)

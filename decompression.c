@@ -6,27 +6,132 @@
 #include "a2plain.h"
 #include "a2blocked.h"
 #include "pnm.h"
-
+#include "pixels.h"
 
 typedef A2Methods_UArray2 A2;
+typedef A2Methods_mapfun Mapfun;
 
-/* When converted to component video format, green 
-   stores the lum of the image, red stores the red 
-   component, and blue stored the blue component */
-typedef struct Pnm_color_flt {
-        float red, green, blue;
-} *Pnm_color_flt;
+typedef struct RGBtoInt_cl {
+        A2Methods_UArray2 array2;
+        A2Methods_T methods;
+} RGBtoInt_cl;
+
+typedef struct ComponentToRGB_cl {
+        A2Methods_UArray2 array2;
+        A2Methods_T methods;
+} ComponentToRGB_cl;
 
 
-void *create_int_pixel(unsigned red, unsigned green, unsigned blue)
+
+static void apply_freepixel(int col, int row, A2Methods_UArray2 image, void *elem, void *cl) 
 {
-        Pnm_rgb pixel = malloc(sizeof(*pixel));
-        assert(pixel != NULL);
-        pixel->red = red;
-        pixel->green = green;
-        pixel->blue = blue;
-        return pixel;
+        (void) col;
+        (void) row;
+        (void) image;
+        (void) cl;
+        free(elem);
 }
+
+
+/* Convert RGB floating point numbers to scaled integers */
+static void apply_RGBtoInt(int col, int row, A2Methods_UArray2 RGB_image, void *elem, void *cl) 
+{
+        (void) RGB_image;
+        
+        RGBtoInt_cl *RGBtoInt = cl;
+        
+        Pnm_rgb_flt pixel = (Pnm_rgb_flt) elem;
+        int denominator = 255;
+        /* convert from scaled to float */
+        int r = (int) pixel->red * denominator;
+        int g = (int) pixel->green * denominator;
+        int b = (int) pixel->blue * denominator;
+
+        /* Get the index of an element in the new array */
+        Pnm_rgb new_index = (Pnm_rgb) RGBtoInt->methods->at(RGBtoInt->array2, col, row);
+        /* Create a new_pixel of float representation */
+        Pnm_rgb new_pixel = create_int_pixel(r, g, b);
+        /* Put that pixel in converted_image @ new_index */
+        *new_index = *new_pixel;
+}
+
+A2Methods_UArray2 RGBtoInt(A2Methods_UArray2 RGB_image, Mapfun map,
+                                                A2Methods_T methods) 
+{
+        
+        int width = methods->width(RGB_image);
+        int height = methods->height(RGB_image);
+
+      
+        A2Methods_UArray2 converted_image = methods->new(width, height, sizeof(struct Pnm_rgb));
+        assert(converted_image != NULL);
+
+        RGBtoInt_cl cl = {converted_image, methods};
+        map(RGB_image, apply_RGBtoInt, &cl);
+        //map(RGB_image, apply_freepixel, NULL);
+
+        /* Frees processed_image */
+        methods->free(RGB_image);
+
+        return converted_image;
+}
+
+
+
+static void apply_ComponentToRGB(int col, int row, A2Methods_UArray2 component_image, 
+                                  void *elem, void *cl)
+{
+        (void) component_image; 
+
+        ComponentToRGB_cl *ComponentToRGB = cl;
+        Pnm_component_flt pixel = (Pnm_component_flt) elem;
+
+        float pr = (float) pixel->pr;
+        float y = (float) pixel->y;
+        float pb = (float) pixel->pb;
+
+        float r = 1.0 * y + 0.0 + pb + 1.402 * pr; 
+        float g = 1.0 * y - 0.344136 * pb - 0.714136 * pr; 
+        float b = 1.0 * y + 1.772 * pb + 0.0 * pr;
+
+         /* Get the index of an element in the new array */
+        Pnm_rgb_flt new_index = (Pnm_rgb_flt) ComponentToRGB->methods->at(ComponentToRGB->array2, col, row);
+        /* Create a new_pixel of float representation */
+        Pnm_rgb_flt new_pixel = create_flt_pixel(r, g, b);
+        /* Put that pixel in converted_image @ new_index */
+        *new_index = *new_pixel;
+}
+
+A2Methods_UArray2 ComponentVideotoRGB(A2Methods_UArray2 component_image, Mapfun map,
+                                                A2Methods_T methods)
+{
+        int width = methods->width(component_image);
+        int height = methods->height(component_image);
+
+        A2Methods_UArray2 RGB_image = methods->new(width, height,
+                                                sizeof(struct Pnm_rgb_flt));
+
+        struct ComponentToRGB_cl cl = {RGB_image, methods};
+        map(component_image, apply_ComponentToRGB, &cl);
+        map(component_image, apply_freepixel, NULL);
+
+        /* Frees component_image */
+        methods->free(component_image);
+        return RGB_image;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // void readHeader(FILE *in)
@@ -50,62 +155,3 @@ void *create_int_pixel(unsigned red, unsigned green, unsigned blue)
 //         //                         .methods = methods };                              
 // }
 
-
-
-
-/* Convert RGB floating point numbers to scaled integers */
-A2Methods_UArray2
-RGBtoInt(A2Methods_UArray2 image, A2Methods_T methods)
-{
-        int width = methods->width(image);
-        int height = methods->height(image);
-
-        int denominator = 255; 
-
-        
-        A2Methods_UArray2 intRGB = methods->new(width, height, 
-                                                sizeof(struct Pnm_color_flt));
-
-        for (int col = 0; col < width; col++) {
-                for (int row = 0; row < height; row++) {
-                        A2Methods_Object *pixel = methods->at(image, col, row);
-
-                        /* convert from scaled to float */
-                        int red = (int) ((Pnm_color_flt) pixel)->red * denominator;
-                        int green = (int) ((Pnm_color_flt) pixel)->green * denominator;
-                        int blue = (int) ((Pnm_color_flt) pixel)->blue * denominator;
-
-                        Pnm_rgb newpixel = methods->at(intRGB, col, row);
-                        *newpixel = *((Pnm_rgb) create_int_pixel(red, green, blue));
-                        // newpixel = (Pnm_rgb) newpixel;
-                        // printf("DECOMPRESSED PIXEL VALUE....%d\n", blue);
-                }
-        }
-
-        return intRGB;
-}
-
-/* Convert from Component Video Color Space to RGB */
-void
-ComponentVideotoRGB(A2Methods_UArray2 image, A2Methods_T methods)
-{
-        int width = methods->width(image);
-        int height = methods->height(image);
-
-        for (int col = 0; col < width; col++) {
-                for (int row = 0; row < height; row++) {
-                        Pnm_color_flt pixel = (Pnm_color_flt) methods->at(image, col, row);
-                        float pr = (float) ((struct Pnm_color_flt*) pixel)->red;
-                        float y = (float) ((struct Pnm_color_flt*) pixel)->green;
-                        float pb = (float) ((struct Pnm_color_flt*) pixel)->blue;
-
-                        float r = 1.0 * y + 0.0 + pb + 1.402 * pr; 
-                        float g = 1.0 * y - 0.344136 * pb - 0.714136 * pr; 
-                        float b = 1.0 * y + 1.772 * pb + 0.0 * pr;
-
-                        pixel->red = r;
-                        pixel->blue = b; 
-                        pixel->green = g; 
-                }
-        }
-}
