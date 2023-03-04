@@ -11,15 +11,8 @@
 #include "pixels.h"
 
 
-<<<<<<< Updated upstream
-
-typedef struct Pnm_color_flt {
-        float red, green, blue;
-} Pnm_color_flt;
-=======
 typedef A2Methods_UArray2 A2;
 typedef A2Methods_mapfun Mapfun;
->>>>>>> Stashed changes
 
 void compress40(FILE *input);
 void decompress40(FILE *input);
@@ -155,46 +148,6 @@ void compress40(FILE *input)
         /* Create an array 'original_image' that stores the pixels in the ppm */
         A2Methods_UArray2 original_image = ppm->pixels; 
 
-<<<<<<< Updated upstream
-        /* Pass this image to imageProcessing, so it can be trimmed */
-        A2Methods_UArray2 processed_image = imageProcessing(original_image, map, methods);
-
-        /* Change the pixel representation from scaled RGB to float */
-        A2Methods_UArray2 fltRGB_image = RGBtoFloat(processed_image, map, methods,
-                                                                ppm->denominator);
-
-        /* Change color space from RGB to Component Video */
-        A2Methods_UArray2 component_image = RGBtoComponentVideo(fltRGB_image,
-                                                                map, methods);
-
-       /***************DECOMPRESSION STARTS BELOW:*******************/
-
-        /* Change color space from Component Video to RGB */
-        A2Methods_UArray2 RGB_image = ComponentVideotoRGB(component_image,
-                                                                map, methods);
-
-        /* Change pixel representation from RGB floating point representation to scaled integer */
-        A2Methods_UArray2 converted_image = RGBtoInt(RGB_image, map, methods);
-        
-        /* Create a fake decompressed ppm for testing purposes */
-        Pnm_ppm decompressed_ppm = malloc(sizeof(*decompressed_ppm));
-        decompressed_ppm->methods = methods;
-        decompressed_ppm->width = methods->width(converted_image);
-        decompressed_ppm->height = methods->height(converted_image);
-        decompressed_ppm->pixels = converted_image;
-        decompressed_ppm->denominator = 255; 
-        
-        /* Write the decompressed image to standard output */
-        Pnm_ppmwrite(stdout, decompressed_ppm);
-        // methods->free(&decompressed_image);
-
-
-        /* Free the compressed ppm */
-        //Pnm_ppmfree(&ppm);
-        /* Free the decompressed ppm */
-      //  methods->free(&converted_image);
-        Pnm_ppmfree(&decompressed_ppm); 
-=======
         // A2Methods_UArray2 new_image = remake_image(original_image, map, methods);
         replace_rgb_component(original_image, map, methods, ppm->denominator);
         Pnm_ppmfree(&ppm); 
@@ -239,7 +192,6 @@ void compress40(FILE *input)
 //         /* Free the decompressed ppm */
 //       //  methods->free(&converted_image);
 //         Pnm_ppmfree(&decompressed_ppm); 
->>>>>>> Stashed changes
 
 
 }

@@ -5,36 +5,6 @@
 #include "assert.h"
 
 
-<<<<<<< Updated upstream
-Pnm_component_flt create_component_pixel(float y, float pr, float pb)
-{
-        Pnm_component_flt pixel = malloc(sizeof(*pixel));
-        assert(pixel != NULL);
-        pixel->y = y;
-        pixel->pr = pr;
-        pixel->pb = pb;
-        return pixel;
-}
-
-Pnm_rgb create_int_pixel(unsigned red, unsigned green, unsigned blue)
-{
-        Pnm_rgb pixel = malloc(sizeof(*pixel));
-        assert(pixel != NULL);
-        pixel->red = red;
-        pixel->green = green;
-        pixel->blue = blue;
-        return pixel;
-}
-
-Pnm_rgb_flt create_flt_pixel(float red, float green, float blue)
-{
-        Pnm_rgb_flt pixel = malloc(sizeof(*pixel));
-        assert(pixel != NULL);
-        pixel->red = red;
-        pixel->green = green;
-        pixel->blue = blue;
-        return pixel;
-=======
 Pnm_componentvid_flt create_componentvid_pixel(float y, float pr, float pb)
 {
         Pnm_componentvid_flt pixel = {y, pr, pb};
@@ -101,5 +71,4 @@ DCT_space compute_dct_values(Pnm_componentvid_flt_pixels block)
         DCT_space dct = {a, b, c, d};
         return dct;
 
->>>>>>> Stashed changes
 }
