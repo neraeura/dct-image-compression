@@ -1,8 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 #include "pnm.h"
 #include "pixels.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "assert.h"
 
 
 Pnm_componentvid_flt create_componentvid_pixel(float y, float pr, float pb)
@@ -70,5 +70,26 @@ DCT_space compute_dct_values(Pnm_componentvid_flt_pixels block)
 
         DCT_space dct = {a, b, c, d};
         return dct;
+
+}
+
+int sign(int num) 
+{
+        if (num > 0) {
+                return 1;
+        }
+        return -1;
+}
+
+DCT_space_int quantize_dct(DCT_space block)
+{
+
+        int scaled_a = (abs(block.a * 50) < 0.3) ? (block.a * 50) : 0.3 * sign(block.a);
+        int scaled_b = (abs(block.b * 50) < 0.3) ? (block.b * 50) : 0.3 * sign(block.b);
+        int scaled_c = (abs(block.c * 50) < 0.3) ? (block.c * 50) : 0.3 * sign(block.c);
+        int scaled_d = (abs(block.d * 50) < 0.3) ? (block.d * 50) : 0.3 * sign(block.d);
+
+        DCT_space_int quantized_dct = {scaled_a, scaled_b, scaled_c, scaled_d};
+        return DCT_space_int;
 
 }

@@ -1,7 +1,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
+
+#include "assert.h"
 #include "a2methods.h"
 #include "a2plain.h"
 #include "a2blocked.h"
@@ -117,9 +118,16 @@ void replace_rgb_component(A2Methods_UArray2 original_image, Mapfun map,
                         float denom = (float) denominator;
                         Pnm_rgb_flt_pixels block1 = create_rgbflt_pixels(pixel0, pixel1, pixel2, pixel3, denominator);
                         Pnm_componentvid_flt_pixels block2 = create_compvid_pixels(block1);
+
+
                         float avgpr = compute_pr_avg(block2);
                         float avgpb = compute_pb_avg(block2);
+                        unsigned chroma_pr = Arith40_index_of_chroma(avgpr);
+                        unsigned chroma_pr = Arith40_index_of_chroma(avgpb);
+
+
                         DCT_space values = compute_dct_values(block2); 
+                        DCT_space_int int_values = quantize_dct(values);
 
 
                         Pnm_componentvid_flt new_index = (Pnm_componentvid_flt) methods->at(original_image, col, row);
