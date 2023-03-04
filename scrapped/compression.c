@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,7 +50,7 @@ A2Methods_UArray2 imageProcessing(A2Methods_UArray2 original_image, Mapfun map,
                 width -= width % 2;
                 height -= height % 2;
                 A2Methods_UArray2 trimmed_image = methods->new(width, height,
-                                                sizeof(struct Pnm_rgb));
+                                                sizeof(struct Pnm_rgb_int));
 
                 for (int col = 0; col < width; col++) { 
                         for (int row = 0; row < height; row++) {
@@ -63,8 +62,8 @@ A2Methods_UArray2 imageProcessing(A2Methods_UArray2 original_image, Mapfun map,
                                 int b = ((Pnm_rgb)pixel)->blue;
 
                 
-                                Pnm_rgb new_index = (Pnm_rgb) methods->at(trimmed_image, col, row);
-                                Pnm_rgb new_pixel = create_int_pixel(r, g, b);
+                                Pnm_rgb_int new_index = (Pnm_rgb_int) methods->at(trimmed_image, col, row);
+                                Pnm_rgb_int new_pixel = create_int_pixel(r, g, b, 255);
                                 *new_index = *new_pixel;
                         }
                 }
@@ -82,7 +81,7 @@ static void apply_RGBtoFloat(int col, int row, A2Methods_UArray2 processed_image
 {
         (void) processed_image;
         RGBtoFloat_cl *RGBtoFloat = cl;
-        Pnm_rgb pixel = (Pnm_rgb) elem;
+        Pnm_rgb_int pixel = (Pnm_rgb_int) elem;
 
         /* convert from scaled to float */
         float r = (float) pixel->red;
@@ -99,6 +98,7 @@ static void apply_RGBtoFloat(int col, int row, A2Methods_UArray2 processed_image
         Pnm_rgb_flt new_pixel = create_flt_pixel(flt_r, flt_g, flt_b);
         /* Put that pixel in converted_image @ new_index */
         *new_index = *new_pixel;
+        free(pixel);
 
 }
 
@@ -141,8 +141,8 @@ static void apply_RGBToComponent(int col, int row, A2Methods_UArray2 component_i
         float pr = 0.5 * r - 0.418688 * g - 0.081312 * b;
 
 
-        Pnm_component_flt new_index = (Pnm_component_flt) RGBtoComponent->methods->at(RGBtoComponent->array2, col, row);
-        Pnm_component_flt new_pixel = create_component_pixel(y, pr, pb);
+        Pnm_componentvid_flt new_index = (Pnm_componentvid_flt) RGBtoComponent->methods->at(RGBtoComponent->array2, col, row);
+        Pnm_componentvid_flt new_pixel = create_componentvid_pixel(y, pr, pb);
         *new_index = *new_pixel;
 }
 
@@ -154,7 +154,7 @@ A2Methods_UArray2 RGBtoComponentVideo(A2Methods_UArray2 fltRGB_image, Mapfun map
         int height = methods->height(fltRGB_image);
 
         A2Methods_UArray2 component_image = methods->new(width, height,
-                                                        sizeof(struct Pnm_component_flt));
+                                                        sizeof(struct Pnm_componentvid_flt));
 
         RGBToComponent_cl cl = {component_image, methods};
         map(fltRGB_image, apply_RGBToComponent, &cl);
@@ -164,5 +164,3 @@ A2Methods_UArray2 RGBtoComponentVideo(A2Methods_UArray2 fltRGB_image, Mapfun map
         methods->free(fltRGB_image);
         return component_image;
 }
-=======
->>>>>>> Stashed changes

@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 
 #ifndef COMPRESSION_INCLUDED
 #define COMPRESSION_INCLUDED
@@ -26,11 +25,12 @@ A2Methods_UArray2 RGBtoFloat(A2Methods_UArray2 processed_image, Mapfun map, A2Me
 A2Methods_UArray2 RGBtoComponentVideo(A2Methods_UArray2 fltRGB_image, Mapfun map,
                                                 A2Methods_T methods);
 
+A2Methods_UArray2 AvgPrPbComponentVideo(A2Methods_UArray2 component_image, Mapfun map,
+                                                A2Methods_T methods);
+
 
 #undef A2 
 #undef Mapfun
 
 
 #endif
-=======
->>>>>>> Stashed changes

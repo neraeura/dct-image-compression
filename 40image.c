@@ -6,13 +6,20 @@
 #include "a2plain.h"
 #include "a2blocked.h"
 #include "pnm.h"
-#include "decompression.h"
-#include "compression.h"
+// #include "decompression.h"
+// #include "compression.h"
+#include "pixels.h"
 
+
+<<<<<<< Updated upstream
 
 typedef struct Pnm_color_flt {
         float red, green, blue;
 } Pnm_color_flt;
+=======
+typedef A2Methods_UArray2 A2;
+typedef A2Methods_mapfun Mapfun;
+>>>>>>> Stashed changes
 
 void compress40(FILE *input);
 void decompress40(FILE *input);
@@ -58,6 +65,75 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS; 
 }
 
+// A2Methods_UArray2 remake_image(A2Methods_UArray2 original_image, Mapfun map,
+//                                 A2Methods_T methods, unsigned denominator)
+// {
+//         (void) map;
+//         int width = methods->width(original_image);
+//         int height = methods->height(original_image);
+//         A2Methods_UArray2 new_image = methods->new(width, height,
+//                                                 sizeof(struct Pnm_rgb_flt));
+//         for (int col = 0; col < width; col++) { 
+//                 for (int row = 0; row < height; row++) {
+//                         Pnm_rgb pixel =
+//                                 methods->at(original_image, col, row);
+
+//                         float denom = (float) denominator;
+//                         float r = ((Pnm_rgb)pixel)->red / denom;
+//                         float g = ((Pnm_rgb)pixel)->green / denom;
+//                         float b = ((Pnm_rgb)pixel)->blue / denom;
+
+
+//                         void *new_index = methods->at(new_image, col, row);
+//                         Pnm_rgb_flt new_pixel = create_rgbflt_pixel(r, g, b);
+//                         new_index = &new_pixel;
+//                         fprintf(stderr, "pixel thing...%f", ((Pnm_rgb_flt) new_index)->red);
+//                 }
+//         }
+//         /* Frees original_image */
+//         return new_image;
+// }
+float compute_pr_avg(Pnm_componentvid_flt_pixels block) {
+        float sum = block.pix1.pr + block.pix2.pr + block.pix3.pr + block.pix4.pr;
+        return(sum/4)
+}
+
+float compute_pb_avg(Pnm_componentvid_flt_pixels block) {
+        float sum = block.pix1.pb + block.pix2.pb + block.pix3.pb + block.pix4.pb;
+        return(sum/4)
+}
+
+void replace_rgb_component(A2Methods_UArray2 original_image, Mapfun map,
+                                A2Methods_T methods, unsigned denominator)
+{
+        (void) map;
+        int width = methods->width(original_image);
+        int height = methods->height(original_image);
+
+        for (int col = 0; col < width; col+=2) { 
+                for (int row = 0; row < height; row+=2) {
+                        Pnm_rgb pixel0 =
+                                methods->at(original_image, col, row);
+                        Pnm_rgb pixel1 =
+                                methods->at(original_image, col + 1, row);
+                        Pnm_rgb pixel2 =
+                                methods->at(original_image, col, row + 1);
+                        Pnm_rgb pixel3 =
+                                methods->at(original_image, col + 1, row + 1);
+
+                        float denom = (float) denominator;
+                        Pnm_rgb_flt_pixels block1 = create_rgbflt_pixels(pixel0, pixel1, pixel2, pixel3, denominator);
+                        Pnm_componentvid_flt_pixels block2 = create_compvid_pixels(block1);
+                        float avgpr = compute_pr_avg(block2);
+                        float avgpb = compute_pb_avg(block2);
+                        DCT_space values = compute_dct_values(block2); 
+
+
+                        Pnm_componentvid_flt new_index = (Pnm_componentvid_flt) methods->at(original_image, col, row);
+                        new_index = new_pixel;
+                }
+        }
+}
 
 void compress40(FILE *input)
 {
@@ -79,6 +155,7 @@ void compress40(FILE *input)
         /* Create an array 'original_image' that stores the pixels in the ppm */
         A2Methods_UArray2 original_image = ppm->pixels; 
 
+<<<<<<< Updated upstream
         /* Pass this image to imageProcessing, so it can be trimmed */
         A2Methods_UArray2 processed_image = imageProcessing(original_image, map, methods);
 
@@ -117,6 +194,52 @@ void compress40(FILE *input)
         /* Free the decompressed ppm */
       //  methods->free(&converted_image);
         Pnm_ppmfree(&decompressed_ppm); 
+=======
+        // A2Methods_UArray2 new_image = remake_image(original_image, map, methods);
+        replace_rgb_component(original_image, map, methods, ppm->denominator);
+        Pnm_ppmfree(&ppm); 
+
+        
+
+        /* Pass this image to imageProcessing, so it can be trimmed */
+//         A2Methods_UArray2 processed_image = imageProcessing(new_image, map, methods);
+
+//         /* Change the pixel representation from scaled RGB to float */
+//         A2Methods_UArray2 fltRGB_image = RGBtoFloat(processed_image, map, methods,
+//                                                                 ppm->denominator);
+
+//         /* Change color space from RGB to Component Video */
+//         A2Methods_UArray2 component_image = RGBtoComponentVideo(fltRGB_image,
+//                                                                 map, methods);
+
+//        /***************DECOMPRESSION STARTS BELOW:*******************/
+
+//         /* Change color space from Component Video to RGB */
+//         A2Methods_UArray2 RGB_image = ComponentVideotoRGB(component_image,
+//                                                                 map, methods);
+
+//         /* Change pixel representation from RGB floating point representation to scaled integer */
+//         A2Methods_UArray2 converted_image = RGBtoInt(RGB_image, map, methods);
+        
+//         /* Create a fake decompressed ppm for testing purposes */
+//         Pnm_ppm decompressed_ppm = malloc(sizeof(*decompressed_ppm));
+//         decompressed_ppm->methods = methods;
+//         decompressed_ppm->width = methods->width(converted_image);
+//         decompressed_ppm->height = methods->height(converted_image);
+//         decompressed_ppm->pixels = converted_image;
+//         decompressed_ppm->denominator = 255; 
+        
+//         /* Write the decompressed image to standard output */
+//         Pnm_ppmwrite(stdout, decompressed_ppm);
+//         // methods->free(&decompressed_image);
+
+
+//         /* Free the compressed ppm */
+//         //Pnm_ppmfree(&ppm);
+//         /* Free the decompressed ppm */
+//       //  methods->free(&converted_image);
+//         Pnm_ppmfree(&decompressed_ppm); 
+>>>>>>> Stashed changes
 
 
 }
