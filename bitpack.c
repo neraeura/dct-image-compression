@@ -4,7 +4,7 @@
 #include "bitpack.h"
 #include "assert.h"
 
-const int MAX_BYTES = 64;
+const unsigned MAX_BYTES = 64;
 
 static uint64_t shift_left(uint64_t word, unsigned bits)
 {
@@ -38,15 +38,15 @@ static int64_t shift_right_arith(uint64_t word, unsigned bits)
 bool Bitpack_fitsu(uint64_t n, unsigned width)
 {
         assert(width <= MAX_BYTES);
-        int64_t result = shift_right_logical(n, width);
+        uint64_t result = shift_right_logical(n, width);
         return result == 0;
 }
 
 bool Bitpack_fitss(int64_t n, unsigned width) 
 {                   
         assert(width <= MAX_BYTES);
-        int64_t shifted_left = shift_left(n, 64 - width);
-        int64_t result = shift_right_arith(shifted_left, 64 - width);
+        uint64_t shifted_left = shift_left(n, MAX_BYTES - width);
+        int64_t result = shift_right_arith(shifted_left, MAX_BYTES - width);
 
         return result == n; 
 }
@@ -54,15 +54,28 @@ bool Bitpack_fitss(int64_t n, unsigned width)
 uint64_t Bitpack_getu(uint64_t word, unsigned width, unsigned lsb)
 {
         assert(width <= MAX_BYTES);
-        if (width == 0) {
-                return 0;
-        } else {
-
-        }
+        assert(lsb + width);
+        uint64_t shifted_right = shift_right_logical(word, 
+                                                (MAX_BYTES - (lsb + width)));
+        uint64_t result = shift_left(shifted_right, (MAX_BYTES - width));
+        return result;
 }
 
 int64_t Bitpack_gets(uint64_t word, unsigned width, unsigned lsb)
 {
         assert(width <= MAX_BYTES);
-        
+        assert(lsb + width);
+        int64_t shifted_right = shift_right_arith(word, 
+                                                (MAX_BYTES - (lsb + width)));
+        uint64_t result = shift_left(shifted_right, (MAX_BYTES - width));
+        return result;
+}
+
+
+uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, 
+                                                                uint64_t value)
+{
+        assert(width <= MAX_BYTES);
+        assert(lsb + width);
+        unsigned shift_diff = lsb + width;
 }
