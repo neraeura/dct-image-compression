@@ -58,6 +58,7 @@ DCT_space_int quantize_dct(DCT_space block)
 
 }
 
+/* TODO: ASK TA IF THIS IS MODULAR */
 void compress_image(A2Methods_UArray2 original_image,
                         A2Methods_T methods, unsigned denominator)
 {
@@ -100,7 +101,6 @@ void compress_image(A2Methods_UArray2 original_image,
                         unsigned chroma_pr = Arith40_index_of_chroma(avgpr);
                         unsigned chroma_pb = Arith40_index_of_chroma(avgpb);
 
-                
                         /* DCT */
                         DCT_space values = compute_dct_values(block2); 
                         DCT_space_int int_values = quantize_dct(values);
