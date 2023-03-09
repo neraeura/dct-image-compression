@@ -13,6 +13,16 @@
 #include "arith40.h"
 
 
+static const unsigned A_SIZE = 9;
+static const unsigned B_SIZE = 5;
+static const unsigned C_SIZE = 5;
+static const unsigned D_SIZE = 5;
+static const unsigned PR_SIZE = 4;
+static const unsigned PB_SIZE = 4;
+static const unsigned MAX_WORD_SIZE = A_SIZE + B_SIZE + C_SIZE + D_SIZE
+                                                        + PR_SIZE + PB_SIZE;
+
+
 
 float compute_pr_avg(Pnm_componentvid_flt_pixels block) 
 {
@@ -46,7 +56,7 @@ DCT_space compute_dct_values(Pnm_componentvid_flt_pixels block)
 
 }
 
-DCT_space_int quantize_dct(DCT_space block)
+DCT_space_int quantize_dct_compress(DCT_space block)
 {
         int scaled_a = (fabs(block.a * 50) < 0.3) ? (block.a * 50) : 0.3 * sign(block.a);
         int scaled_b = (fabs(block.b * 50) < 0.3) ? (block.b * 50) : 0.3 * sign(block.b);
@@ -57,6 +67,29 @@ DCT_space_int quantize_dct(DCT_space block)
         return quantized_dct;
 
 }
+
+
+Codeword fill_codeword(Codeword word, unsigned bits_left) 
+{
+        word = Bitpack_newu(word, A_SIZE, bits_left -= A_SIZE, word.dct.a);
+        word = Bitpack_news(word, B_SIZE, bits_left -= B_SIZE, word.dct.b);
+        word = Bitpack_news(word, C_SIZE, bits_left -= C_SIZE, word.dct.c);
+        word = Bitpack_news(word, D_SIZE, bits_left -= D_SIZE, word.dct.d);
+        word = Bitpack_newu(word, PB_SIZE, bits_left -= PB_SIZE, word.avg_pb);
+        word = Bitpack_newu(word, PR_SIZE, bits_left -= PB_SIZE, word.avg_pr);
+        return word;
+}
+
+void print_codeword(Codeword word, unsigned bit_left) 
+{
+        putc(Bitpack_getu(word, A_SIZE, bits_left -= A_SIZE), stdout);
+        putc(Bitpack_getu(word, B_SIZE, bits_left -= B_SIZE), stdout);
+        putc(Bitpack_getu(word, C_SIZE, bits_left -= C_SIZE), stdout);
+        putc(Bitpack_getu(word, D_SIZE, bits_left -= D_SIZE), stdout);
+        putc(Bitpack_getu(word, PB_SIZE, bits_left -= PB_SIZE), stdout);
+        putc(Bitpack_getu(word, PR_SIZE, bits_left -= PR_SIZE), stdout);
+}
+
 
 /* TODO: ASK TA IF THIS IS MODULAR */
 void compress_image(A2Methods_UArray2 original_image,
@@ -82,32 +115,30 @@ void compress_image(A2Methods_UArray2 original_image,
                         Pnm_rgb pixel3 =
                                 methods->at(original_image, col + 1, row + 1);
 
-                        /* Getting denominator */
-                        float denom = (float) denominator;
-
-
                         /* Convert block of RGB scaled integers to float points */
-                        Pnm_rgb_flt_pixels block1 = create_rgbflt_pixels(pixel0, pixel1, pixel2, pixel3, denom);
+                        Pnm_rgb_flt_pixels rgb_block = create_rgbflt_pixels(pixel0, pixel1, pixel2, pixel3, denominator);
                        
                         /* Convert from RGB to CV color space */
-                        Pnm_componentvid_flt_pixels block2 = create_compvid_pixels(block1);
+                        Pnm_componentvid_flt_pixels compvid_block = create_compvid_pixels(compvid_block);
 
 
                         /* Compute average PR and PB values */
-                        float avgpr = compute_pr_avg(block2);
-                        float avgpb = compute_pb_avg(block2);
+                        float avgpr = compute_pr_avg(compvid_block);
+                        float avgpb = compute_pb_avg(compvid_block);
 
                         /* Computing the chroma */
                         unsigned chroma_pr = Arith40_index_of_chroma(avgpr);
                         unsigned chroma_pb = Arith40_index_of_chroma(avgpb);
 
                         /* DCT */
-                        DCT_space values = compute_dct_values(block2); 
-                        DCT_space_int int_values = quantize_dct(values);
-                        (void) int_values;
-                        (void) chroma_pb; 
-                        (void) chroma_pr;
-                        (void) denom;
+                        DCT_space values = compute_dct_values(compvid_block); 
+                        DCT_space_int DCT_int_values = quantize_dct_compress(values);
+
+                        /* Bit packing */
+                        Codeword word = {DCT_int_values, chroma_pr, chroma_pb};
+                        unsigned lsb_idx = MAX_WORD_SIZE;
+                        uint64_t packed_word = fill_codeword(word, lsb_idx);
+                        print_codeword(packed_word, lsb_idx);
                 }
         }
 }

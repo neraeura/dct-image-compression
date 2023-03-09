@@ -53,34 +53,6 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS; 
 }
 
-// A2Methods_UArray2 remake_image(A2Methods_UArray2 original_image, Mapfun map,
-//                                 A2Methods_T methods, unsigned denominator)
-// {
-//         (void) map;
-//         int width = methods->width(original_image);
-//         int height = methods->height(original_image);
-//         A2Methods_UArray2 new_image = methods->new(width, height,
-//                                                 sizeof(struct Pnm_rgb_flt));
-//         for (int col = 0; col < width; col++) { 
-//                 for (int row = 0; row < height; row++) {
-//                         Pnm_rgb pixel =
-//                                 methods->at(original_image, col, row);
-
-//                         float denom = (float) denominator;
-//                         float r = ((Pnm_rgb)pixel)->red / denom;
-//                         float g = ((Pnm_rgb)pixel)->green / denom;
-//                         float b = ((Pnm_rgb)pixel)->blue / denom;
-
-
-//                         void *new_index = methods->at(new_image, col, row);
-//                         Pnm_rgb_flt new_pixel = create_rgbflt_pixel(r, g, b);
-//                         new_index = &new_pixel;
-//                         fprintf(stderr, "pixel thing...%f", ((Pnm_rgb_flt) new_index)->red);
-//                 }
-//         }
-//         /* Frees original_image */
-//         return new_image;
-// }
 
 
 void compress40(FILE *input)
@@ -88,8 +60,6 @@ void compress40(FILE *input)
         /* Get methods object in order to access a2 functions */
         A2Methods_T methods = uarray2_methods_plain;
         assert(methods != NULL);
-        // A2Methods_mapfun *map = methods->map_default;
-        
         
         /* Create a ppm representing the original image */
         Pnm_ppm ppm;
@@ -106,9 +76,12 @@ void compress40(FILE *input)
 }
 
 
-
 void decompress40(FILE *input)
 {
-        (void) input;
+        A2Methods_T methods = uarray2_methods_plain;
+        assert(methods != NULL);
+        Pnm_ppm new_image = readHeader(input);
+        decompress_image(new_image->pixels, methods);
+        Pnm_ppmwrite(new_image);
 }
 

@@ -134,24 +134,4 @@ A2Methods_UArray2 ComponentVideotoRGB(A2Methods_UArray2 component_image, Mapfun 
 
 
 
-// void readHeader(FILE *in)
-// {
-//         unsigned height, width;
-//         int read = fscanf(in, "COMP40 Compressed image format 2\n%u %u", 
-//                                 &width, &height); assert(read == 2);
-//         int c = getc(in);
-//         assert(c == '\n');
-//         /* handle case if c != \n ?? */
-
-//         UArray2_T pixels = UArray2_new(width, height, sizeof(struct Pnm_rgb));
-//         Pnm_ppm pixmap; /* ptr to a struct */
-//         pixmap->height = height;
-//         pixmap->width = width;
-//         pixmap->denominator = denominator;
-//         pixmap->pixels = pixels;
-        
-//         // struct Pnm_ppm compressed_ppm = { .width = width, .height = height, 
-//         //                         .denominator = demoninator, .pixels = array, 
-//         //                         .methods = methods };                              
-// }
 

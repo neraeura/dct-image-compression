@@ -176,3 +176,32 @@
 //         methods->free(&RGB_image);
 //         return converted_image;
 // }
+
+// A2Methods_UArray2 remake_image(A2Methods_UArray2 original_image, Mapfun map,
+//                                 A2Methods_T methods, unsigned denominator)
+// {
+//         (void) map;
+//         int width = methods->width(original_image);
+//         int height = methods->height(original_image);
+//         A2Methods_UArray2 new_image = methods->new(width, height,
+//                                                 sizeof(struct Pnm_rgb_flt));
+//         for (int col = 0; col < width; col++) { 
+//                 for (int row = 0; row < height; row++) {
+//                         Pnm_rgb pixel =
+//                                 methods->at(original_image, col, row);
+
+//                         float denom = (float) denominator;
+//                         float r = ((Pnm_rgb)pixel)->red / denom;
+//                         float g = ((Pnm_rgb)pixel)->green / denom;
+//                         float b = ((Pnm_rgb)pixel)->blue / denom;
+
+
+//                         void *new_index = methods->at(new_image, col, row);
+//                         Pnm_rgb_flt new_pixel = create_rgbflt_pixel(r, g, b);
+//                         new_index = &new_pixel;
+//                         fprintf(stderr, "pixel thing...%f", ((Pnm_rgb_flt) new_index)->red);
+//                 }
+//         }
+//         /* Frees original_image */
+//         return new_image;
+// }
