@@ -53,12 +53,24 @@ Pnm_componentvid_flt_pixels create_compvid_pixels(Pnm_rgb_flt_pixels block)
         return compvid_PEES;
 }
 
-Pnm_rgb_int_pixels create_rgbint_pixels(Pnm_componentvid_flt_pixels block)
+Pnm_componentvid_flt_pixels create_compvid_pixels_decomp(float pr, float pb,
+                                                Brightness_values brightness)
 {
-        Pnm_rgb_int pix1 = create_rgbint_pixel(block.pix1, denominator);
-        Pnm_rgb_int pix2 = create_rgbint_pixel(block.pix2, denominator);
-        Pnm_rgb_int pix3 = create_rgbint_pixel(block.pix3, denominator);
-        Pnm_rgb_int pix4 = create_rgbint_pixel(block.pix4, denominator);
+        Pnm_componentvid_flt compvid_pix1 = {brightness.y_1, pr, pb};
+        Pnm_componentvid_flt compvid_pix2 = {brightness.y_2, pr, pb};
+        Pnm_componentvid_flt compvid_pix3 = {brightness.y_3, pr, pb};
+        Pnm_componentvid_flt compvid_pix4 = {brightness.y_4, pr, pb};
+        Pnm_componentvid_flt_pixels compvid_PEES = {compvid_pix1, compvid_pix2, compvid_pix3, compvid_pix4};
+        return compvid_PEES;
+}
+
+Pnm_rgb_int_pixels create_rgbint_pixels(Pnm_componentvid_flt_pixels block, unsigned denominator)
+{
+        float denom = (float) denominator;
+        Pnm_rgb_int pix1 = create_rgbint_pixel(block.pix1, denom);
+        Pnm_rgb_int pix2 = create_rgbint_pixel(block.pix2, denom);
+        Pnm_rgb_int pix3 = create_rgbint_pixel(block.pix3, denom);
+        Pnm_rgb_int pix4 = create_rgbint_pixel(block.pix4, denom);
         Pnm_rgb_flt_pixels intPEES = {pix1, pix2, pix3, pix4};
         return intPEES;
 }

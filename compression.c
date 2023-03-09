@@ -58,7 +58,7 @@ DCT_space compute_dct_values(Pnm_componentvid_flt_pixels block)
 
 DCT_space_int quantize_dct_compress(DCT_space block)
 {
-        int scaled_a = (fabs(block.a * 50) < 0.3) ? (block.a * 50) : 0.3 * sign(block.a);
+        int scaled_a = (int) block.a;
         int scaled_b = (fabs(block.b * 50) < 0.3) ? (block.b * 50) : 0.3 * sign(block.b);
         int scaled_c = (fabs(block.c * 50) < 0.3) ? (block.c * 50) : 0.3 * sign(block.c);
         int scaled_d = (fabs(block.d * 50) < 0.3) ? (block.d * 50) : 0.3 * sign(block.d);
@@ -77,6 +77,7 @@ Codeword fill_codeword(Codeword word, unsigned bits_left)
         word = Bitpack_news(word, D_SIZE, bits_left -= D_SIZE, word.dct.d);
         word = Bitpack_newu(word, PB_SIZE, bits_left -= PB_SIZE, word.avg_pb);
         word = Bitpack_newu(word, PR_SIZE, bits_left -= PB_SIZE, word.avg_pr);
+        assert(bits_left == 0);
         return word;
 }
 
@@ -88,6 +89,7 @@ void print_codeword(Codeword word, unsigned bit_left)
         putc(Bitpack_getu(word, D_SIZE, bits_left -= D_SIZE), stdout);
         putc(Bitpack_getu(word, PB_SIZE, bits_left -= PB_SIZE), stdout);
         putc(Bitpack_getu(word, PR_SIZE, bits_left -= PR_SIZE), stdout);
+        assert(bits_left == 0);
 }
 
 

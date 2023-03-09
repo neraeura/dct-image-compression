@@ -53,6 +53,7 @@ void readPixmap(Pnm_ppm pixmap)
                 uint32_t codeword;
                 int read = fscanf(in, "%4x", &codeword);
                 assert(read == 1);
+        }
 }
 
 
@@ -69,20 +70,64 @@ DCT_space quantize_dct(DCT_space_int block)
 }
 
 
-Pixel_space compute_pixel_values(DCT_space block)
+Brightness_values compute_brightness_values(DCT_space block)
 {
-        int y_1 = block.a - block.b - block.c + block.d;
-        int y_2 = block.a - block.b + block.c - block.d; 
-        int y_3 = block.a + block.b - block.c - block.d; 
+        float y_1 = block.a - block.b - block.c + block.d;
+        float y_2 = block.a - block.b + block.c - block.d; 
+        float y_3 = block.a + block.b - block.c - block.d; 
         float y_4 = block.a + block.b + block.c + block.d;
-        Pixel_space pixels = {y_1, y_2, y_3, y_4};
+        Brightness_values pixels = {y_1, y_2, y_3, y_4};
 
         return pixels;
 }
+DCT_space quantize_dct_decompress(DCT_space_int block)
+{
+        int scaled_a = (float) block.a;
+        int scaled_b = (float) block.b / 50.0;
+        int scaled_c = (float) block.c / 50.0;
+        int scaled_d = (float) block.d / 50.0;
 
+        DCT_space quantized_dct = {scaled_a, scaled_b, scaled_c, scaled_d};
+        return quantized_dct;
+
+}
+
+unsigned char check_EOF(input)
+{
+        int c = getc(input);
+        assert(c != EOF);
+        // questionable
+        return (unsigned char)(c & 0xff);
+}
+
+
+Codeword fill_codeword(unsigned bits_left, FILE *input) 
+{       
+        /* Piping each lsb amount into a variable and checking if 
+                the EOF character is present the characters              */
+        uint32_t a |= check_EOF(input) << (bits_left -= A_SIZE);
+        uint32_t b |= check_EOF(input) << (bits_left -= B_SIZE);
+        uint32_t c |= check_EOF(input) << (bits_left -= C_SIZE);
+        uint32_t d |= check_EOF(input) << (bits_left -= D_SIZE);
+        uint32_t pr |= check_EOF(input) << (bits_left -= PR_SIZE);
+        uint32_t pb |= check_EOF(input) << (bits_left -= PB_SIZE);
+        assert(bits_left == 0);
+
+        Codeword word;
+        word.dct.a = (int) a * 1;
+        word.dct.b = (int) b;
+        word.dct.c = (int) c;
+        word.dct.d = (int) d;
+
+        /* Convert 4-bit chroma codes to pB and pR */
+        word.avg_pb = Arith40_chroma_of_index(pb);
+        word.avg_pr = Arith40_chroma_of_index(pr);
+        return word;
+}
 
 /* TODO: ASK TA IF THIS IS MODULAR */
-void decompress_image(A2Methods_UArray2 original_image, A2Methods_T methods)
+void decompress_image(A2Methods_UArray2 original_image, A2Methods_T methods,
+                                                                FILE *input)
 {
         int width = methods->width(original_image);
         int height = methods->height(original_image);
@@ -94,6 +139,35 @@ void decompress_image(A2Methods_UArray2 original_image, A2Methods_T methods)
 
         for (int col = 0; col < width; col+=2) { 
                 for (int row = 0; row < height; row+=2) {
+
+                        /* Unpacking */
+                        unsigned lsb = MAX_WORD_SIZE;
+                        Codeword extracted_values = fill_codeword(lsb, input);
+
+                        /* Quantization to get floating point integers */
+                        DCT_space dct = quantize_dct_decompress(extracted_values.dct);
+                
+
+                        // /* Convert 4-bit chroma codes to pB and pR */
+                        // unsigned avgpr = Arith40_chroma_of_index(chroma_pr);
+                        // unsigned avgpb = Arith40_chroma_of_index(chroma_pb)
+
+                         /* Inverse DCT */
+                        Brightness_values brightnesses = 
+                                                compute_brightness_values(dct);
+
+                        /* create CV pixels */
+                        Pnm_componentvid_flt_pixels comp_vid_block = 
+                                create_compvid_pixels_decomp(
+                                        extracted_values.avg_pr,
+                                        extracted_values.avg_pb, 
+                                        brightnesses);
+
+                        /* Transform from CV to RGB color space */
+                        Pnm_rgb_int_pixels rgb_block = 
+                                create_rgbint_pixels(comp_vid_block,
+                                                        DENOMINATOR);
+
                         /* Getting each pixel in the 2x2 block */
                         Pnm_rgb pixel0 =
                                 methods->at(original_image, col, row);
@@ -104,24 +178,11 @@ void decompress_image(A2Methods_UArray2 original_image, A2Methods_T methods)
                         Pnm_rgb pixel3 =
                                 methods->at(original_image, col + 1, row + 1);
 
-                        /* Unpacking */
-                        
-
-
-                        /* Convert 4-bit chroma codes to pB and pR */
-                        unsigned avgpr = Arith40_chroma_of_index(chroma_pr);
-                        unsigned avgpb = Arith40_chroma_of_index(chroma_pb);
-
-        
-                        /* Quantization to get floating point integers */
-                        DCT_space flt_values = quantize_dct()
-
-                         /* Inverse DCT */
-                        Pixel_space pixel_values = compute_pixel_values(flt_values); 
-
-                        /* Transform from CV to RGB color space */
-                        Pnm_rgb_int_pixels rgb_block = create_rgbint_pixels(pixel_values);
-                        
+                        // Might not work, we may need to malloc the pixels
+                        pixel0 = rgb_block.pix1;
+                        pixel1 = rgb_block.pix2;
+                        pixel2 = rgb_block.pix3;
+                        pixel3 = rgb_block.pix4;
                 }
         }
 }

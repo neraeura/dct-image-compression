@@ -39,9 +39,9 @@ typedef struct DCT_space_int {
         int a, b, c, d;
 } DCT_space_int;
 
-typedef struct Pixel_space { 
+typedef struct Brightness_values { 
         float y_1, y_2, y_3, y_4;
-} Pixel_space;
+} Brightness_values;
 
 typedef struct Codeword {
         DCT_space_int dct;

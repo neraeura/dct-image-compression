@@ -81,7 +81,7 @@ void decompress40(FILE *input)
         A2Methods_T methods = uarray2_methods_plain;
         assert(methods != NULL);
         Pnm_ppm new_image = readHeader(input);
-        decompress_image(new_image->pixels, methods);
+        decompress_image(new_image->pixels, methods, input);
         Pnm_ppmwrite(new_image);
 }
 
