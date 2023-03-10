@@ -54,7 +54,17 @@ int main(int argc, char *argv[])
 }
 
 
-
+ /**************************** compress40() ****************************
+ * 
+ *  Purpose: Delineates the overall control flow of the image compressor 
+ *  Parameters: 
+ *      1. An file pointer that holds the address of the input file containing
+ *         the PPM image to compress
+ *  Returns: None
+ *  Effects: Writes a compressed PPM to stdout 
+ *  Expects: A valid PPM image for reading
+ * 
+ ****************************************************************************/
 void compress40(FILE *input)
 {
         /* Get methods object in order to access a2 functions */
@@ -64,24 +74,35 @@ void compress40(FILE *input)
         /* Create a ppm representing the original image */
         Pnm_ppm ppm;
         ppm = Pnm_ppmread(input, methods);
-        (void) input;
 
         /* Create an array 'original_image' that stores the pixels in the ppm */
         A2Methods_UArray2 original_image = ppm->pixels; 
 
         // A2Methods_UArray2 new_image = remake_image(original_image, map, methods);
-        compress_image(original_image, methods, ppm->denominator);
+        compressImage(original_image, methods, ppm->denominator);
+        Pnm_ppmwrite(stdout, ppm);
         Pnm_ppmfree(&ppm); 
 
 }
 
-
+ /**************************** decompress40() ****************************
+ * 
+ *  Purpose: Delineates the overall control flow of the image deompressor 
+ *  Parameters: 
+ *      1. An file pointer that holds the address of the compressed file 
+ *         containing the PPM image to decompress
+ *  Returns: None
+ *  Effects: Writes a decompressed PPM to stdout 
+ *  Expects: A valid compressed PPM image for reading
+ * 
+ ****************************************************************************/
 void decompress40(FILE *input)
 {
         A2Methods_T methods = uarray2_methods_plain;
         assert(methods != NULL);
         Pnm_ppm new_image = readHeader(input);
-        decompress_image(new_image->pixels, methods, input);
-        Pnm_ppmwrite(new_image);
+        decompressImage(new_image->pixels, methods, input);
+        /* will this follow row-major and big-endian ?*/
+        Pnm_ppmwrite(stdout, new_image);
 }
 

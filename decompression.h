@@ -14,7 +14,10 @@
 #include "pixels.h"
 #include "pnm.h"
 
-void decompress_image(A2Methods_UArray2 original_image, A2Methods_T methods,
+void decompressImage(A2Methods_UArray2 original_image, A2Methods_T methods,
                                                                 FILE *input);
+
+Pnm_ppm readHeader(FILE *in);
+
 
 #endif

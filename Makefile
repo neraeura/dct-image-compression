@@ -61,13 +61,13 @@ all: arith
 
 ## Linking step (.o -> executable program)
 
-# ppmdiff: uarray2b.o uarray2.o a2plain.o 
-# 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+ppmdiff: ppmdiff.o uarray2b.o uarray2.o a2plain.o 
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 	
 # arith: 40image.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o pixels.o
 # 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
-arith: 40image.o uarray2b.o uarray2.o a2plain.o pixels.o compression.o
+arith: 40image.o uarray2b.o uarray2.o a2plain.o pixels.o compression.o decompression.o bitpack.o
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 uarray2.o: uarray2.c $(INCLUDES)

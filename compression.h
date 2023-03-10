@@ -17,7 +17,7 @@
 
 #define A2 A2Methods_UArray2
 
-void compress_image(A2Methods_UArray2 original_image,
+void compressImage(A2Methods_UArray2 original_image,
                         A2Methods_T methods, unsigned denominator);
 
 

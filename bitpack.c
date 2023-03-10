@@ -6,8 +6,9 @@
 #include "assert.h"
 #include "except.h"
 
+Except_T Bitpack_Overflow = { "Overflow packing bits" };
+
 static const unsigned MAX_BYTES = 64;
-static const unsigned BITS_PER_BYTE = 8; 
 
 static uint64_t shift_left(uint64_t word, unsigned bits)
 {
@@ -78,7 +79,7 @@ uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, uint64_t valu
         unsigned shift_high = lsb + width;
         unsigned shift_low = MAX_BYTES - lsb;
         assert(shift_high <= 64);
-        assert(width >= 0 && width <= 64);
+        assert(width <= 64);
         if (!(Bitpack_fitsu(value, width))) {
                 RAISE(Bitpack_Overflow);
         }
@@ -87,14 +88,14 @@ uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, uint64_t valu
         uint64_t align_high = shift_right_logical(word, shift_high);
         /*  left-shifts the aligned bits to the leftmost bits of the word, so 
         that they are ready to be combined with the value */
-        uint64_t high_end = shift_left(align_high);
+        uint64_t high_end = shift_left(align_high, shift_high);
         /* left-shifts the bits that are not included in the field being written 
         to the leftmost bits of the word, so that they are ready to be combined 
         with the value */
         uint64_t align_low = shift_left(word, shift_low);
         /* right-shifts the left-shifted bits to align them with the LSB's of 
         the word */
-        uint64_t low_end = shift_right_logical(low_end, shift);
+        uint64_t low_end = shift_right_logical(align_low, shift_low);
         /* combines the aligned bits of the field with the most significant 
         bits of the word (high_end), the value to be written, left-shifted by 
         the least significant bit (value << lsb), and the aligned bits of the 
@@ -106,7 +107,7 @@ uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, uint64_t valu
 
 uint64_t Bitpack_news(uint64_t word, unsigned width, unsigned lsb, int64_t value)
 {
-        assert(width >= 0 && width <= 64);
+        assert(width <= 64);
         assert(width + lsb <= 64);
         if(!(Bitpack_fitss(value, width))) { 
                 RAISE(Bitpack_Overflow);
