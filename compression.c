@@ -345,6 +345,10 @@ void compressImage(A2Methods_UArray2 original_image,
 
                          /* Quantization to get floating point integers */
                         DCT_space dct = quantizeRGB1(unpacked_word.dct);
+                         // if (row == 0 && col == 0) {
+                        //         fprintf(stderr, "y_1: %f\ny_2: %f\ny_3: %f\ny_4: %f\n",
+                        //         brightnesses.y_1, brightnesses.y_2, brightnesses.y_3, brightnesses.y_4);
+                        // }
                 
 
                          /* Convert 4-bit chroma codes to pB and pR */
@@ -354,10 +358,10 @@ void compressImage(A2Methods_UArray2 original_image,
                          /* Inverse DCT */
                         Brightness_values brightnesses = 
                                                 computeBrightnessValues(dct);
-                        if (row == 0 && col == 0) {
-                                fprintf(stderr, "y_1: %f\ny_2: %f\ny_3: %f\ny_4: %f\n",
-                                brightnesses.y_1, brightnesses.y_2, brightnesses.y_3, brightnesses.y_4);
-                        }
+                        // if (row == 0 && col == 0) {
+                        //         fprintf(stderr, "y_1: %f\ny_2: %f\ny_3: %f\ny_4: %f\n",
+                        //         brightnesses.y_1, brightnesses.y_2, brightnesses.y_3, brightnesses.y_4);
+                        // }
 
                         /* create CV pixels */
                         Pnm_componentvid_flt_pixels comp_vid_block = create_compvid_pixels_decomp(pr, pb, brightnesses);

@@ -77,7 +77,7 @@ Brightness_values computeInverseDCT(DCT_space block)
         float y_3 = block.a + block.b - block.c - block.d; 
         float y_4 = block.a + block.b + block.c + block.d;
         Brightness_values pixels = {y_1, y_2, y_3, y_4};
-
+ 
         return pixels;
 }
 
@@ -102,10 +102,10 @@ Brightness_values computeInverseDCT(DCT_space block)
  ****************************************************************************/
 DCT_space quantizeRGB(DCT_space_int block)
 {
-        int scaled_a = (float) block.a;
-        int scaled_b = (float) block.b / 50.0;
-        int scaled_c = (float) block.c / 50.0;
-        int scaled_d = (float) block.d / 50.0;
+        float scaled_a = (float) block.a / 511.0; 
+        float scaled_b = (float) block.b / 50.0;
+        float scaled_c = (float) block.c / 50.0;
+        float scaled_d = (float) block.d / 50.0;
 
         DCT_space quantized_dct = {scaled_a, scaled_b, scaled_c, scaled_d};
         return quantized_dct;
@@ -136,16 +136,30 @@ DCT_space quantizeRGB(DCT_space_int block)
  *           image.
  * 
  ****************************************************************************/
-Codeword unpackCodeword(uint64_t raw_word, unsigned bits_left) 
+Codeword unpackCodeword(uint64_t raw_word) 
 {       
-        Codeword word;
-        word.dct.a = Bitpack_getu(raw_word, A_SIZE, bits_left -= A_SIZE);
-        word.dct.b = Bitpack_gets(raw_word, B_SIZE, bits_left -= B_SIZE);
-        word.dct.c = Bitpack_gets(raw_word, C_SIZE, bits_left -= C_SIZE);
-        word.dct.d = Bitpack_gets(raw_word, D_SIZE, bits_left -= D_SIZE);
-        word.avg_pb = Bitpack_getu(raw_word, PB_SIZE, bits_left -= PB_SIZE);
-        word.avg_pr = Bitpack_getu(raw_word, PR_SIZE, bits_left -= PR_SIZE);
+        unsigned bit_count = MAX_WORD_SIZE;
 
+        /* for a, b, c, d, pb, and pr, we obtain the LSB by subtracting their 
+         * respective LSB indices from bit_count */
+
+        uint32_t a = Bitpack_getu(raw_word, A_SIZE, bit_count -= A_SIZE);
+  
+        int32_t b = Bitpack_gets(raw_word, B_SIZE, bit_count -= B_SIZE);
+
+        int32_t c = Bitpack_gets(raw_word, C_SIZE, bit_count -= C_SIZE);
+        
+        int32_t d = Bitpack_gets(raw_word, D_SIZE, bit_count -= D_SIZE);
+
+        uint32_t avg_pb = Bitpack_getu(raw_word, PB_SIZE, bit_count -= PB_SIZE);
+
+        uint32_t avg_pr = Bitpack_getu(raw_word, PR_SIZE, bit_count -= PR_SIZE);
+        
+        
+        DCT_space_int word_dct = {a, b, c, d};
+        Codeword word = {word_dct, avg_pr, avg_pb};
+        
+        assert(bit_count == 0);
         return word;
 }
 
@@ -224,15 +238,15 @@ void decompressImage(A2Methods_UArray2 original_image, A2Methods_T methods,
 
                         /* Unpacking */
                         unsigned lsb = MAX_WORD_SIZE;
-                        uint64_t extracted_values = readInCodeword(input, lsb);
-                        Codeword word = unpackCodeword(extracted_values, lsb);
+                        uint32_t extracted_values = readInCodeword(input, lsb);
+                        Codeword unpacked_word = unpackCodeword1(packed_word);
 
                          /* Convert 4-bit chroma codes to pB and pR */
-                        float pb = Arith40_chroma_of_index(word.avg_pb);
-                        float pr = Arith40_chroma_of_index(word.avg_pr);
+                        float pb = Arith40_chroma_of_index(unpacked_word.avg_pb);
+                        float pr = Arith40_chroma_of_index(unpacked_word.avg_pr);
 
                         /* Quantization to get floating point integers */
-                        DCT_space dct = quantizeRGB(word.dct);
+                        DCT_space dct = quantizeRGB(unpacked_word.dct);
                 
 
                         // /* Convert 4-bit chroma codes to pB and pR */
@@ -269,6 +283,11 @@ void decompressImage(A2Methods_UArray2 original_image, A2Methods_T methods,
                         *pixel1 = *(rgb_block.pix2);
                         *pixel2 = *(rgb_block.pix3);
                         *pixel3 = *(rgb_block.pix4);
+
+                        free(rgb_block.pix1);
+                        free(rgb_block.pix2);
+                        free(rgb_block.pix3);
+                        free(rgb_block.pix4);
                 }
         }
 }
