@@ -29,16 +29,22 @@ static const unsigned MAX_WORD_SIZE = 32;
 
  /**************************** computePR_avg() ****************************
  * 
- *  Purpose: Computes PR_avg, the average value of the pR component: the
- *           chroma that transmits the difference between red and luma 
+ *  Purpose: Computes PR_avg--the average value of the pR component: the
+ *           chroma that transmits the difference between red and luma--on 
+ *           a given block of pixels 
+ * 
  *  Parameters: 
  *      1. A Pnm_componentvid_flt_pixels structure named "block", which contains 
  *         four pixels representing a 2x2 block of the image in the YCbCr 
  *         color space.
+ * 
  *  Returns: PR_avg, the average value of the pR component: the
  *           chroma that transmits the difference between red and luma 
- *  Effects: 
- *  Expects: 
+ * 
+ *  Effects: The function has no side effects on external variables or state.
+ * 
+ *  Expects: The input pixel block must be valid and contain four pixel values 
+ *           with valid PR component values.
  * 
  ****************************************************************************/
 float computePR_avg(Pnm_componentvid_flt_pixels block) 
@@ -50,16 +56,22 @@ float computePR_avg(Pnm_componentvid_flt_pixels block)
 
  /**************************** computePB_avg() ****************************
  * 
- *  Purpose: Computes PB_avg, the average value of the pR component: the
- *           chroma that transmits the difference between blue and luma 
+ *  Purpose: Computes PB_avg--the average value of the pR component: the
+ *           chroma that transmits the difference between blue and luma--on 
+ *           a given block of pixels  
+ * 
  *  Parameters: 
  *     1. A Pnm_componentvid_flt_pixels structure named "block", which contains 
  *        four pixels representing a 2x2 block of the image in the YCbCr 
  *        color space.
+ * 
  *  Returns:  PB_avg, the average value of the pB component: the
  *           chroma that transmits the difference between blue and luma 
- *  Effects: ??????????????????????????????????????
- *  Expects: 
+ * 
+ *  Effects: The function has no side effects on external variables or state.
+ * 
+ *  Expects: The input pixel block must be valid and contain four pixel values 
+ *           with valid PB component values. 
  * 
  ****************************************************************************/
 float computePB_avg(Pnm_componentvid_flt_pixels block) 
@@ -71,14 +83,20 @@ float computePB_avg(Pnm_componentvid_flt_pixels block)
 
  /**************************** computeDCT() ***********************************
  * 
- *  Purpose: Compute the Discrete Cosine Transform (DCT) of a block of pixels
+ *  Purpose: Computes the Discrete Cosine Transform (DCT) cosine coefficients 
+ *           a, b, c, d of in a given image block of pixels
+ * 
  *  Parameters: 
  *      1. A Pnm_componentvid_flt_pixels structure named "block", which contains 
  *         four pixels representing a 2x2 block of the image in the YCbCr 
  *         color space.
- *  Returns: ????????????????
+ * 
+ *  Returns: The function returns a DCT_space struct, which contains the 
+ *           computed cosine coefficients.
+ * 
  *  Effects: This function does not have any side effects. It does not modify 
  *           any variables or data outside of its scope.
+ * 
  *  Expects: The function expects a valid Pnm_componentvid_flt_pixels structure 
  *           as the input parameter. It assumes that the values of the four 
  *           pixels in the structure are valid and represent a 2x2 block of the 
@@ -104,21 +122,22 @@ DCT_space computeDCT(Pnm_componentvid_flt_pixels block)
 }
  /**************************** quantizeDCT() *********************************
  * 
- *  Purpose: Quantizes a given block of DCT coefficients by sclaing them and 
- *           rounding them off to the nearest integer value 
+ *  Purpose: Quantizes the DCT coefficients of a 2x2 image block 
+ * 
  *  Parameters: 
  *        1. a DCT_space struct named "block" which contains four floats:
  *          "a", "b", "c", and "d", which represent the four coefficients of a 
  *          discrete cosine transformation
- *  Returns: A new DCT_space_int struct containing the quantized DCT 
+ * 
+ *  Returns: A DCT_space_int struct containing the quantized DCT 
  *           coefficients
+ * 
  *  Effects: 
+ * 
  *  Expects:  The function assumes that the input DCT coefficients are 
  *            represented using floating-point values and that the input 
  *            DCT_space struct contains valid values for the "a", "b", "c", and
- *            "d" coefficients. It also assumes that the "sign" function used
- *            in the code is defined and returns the sign of the input value 
- *            (-1 if negative, 0 if zero, and 1 if positive).
+ *            "d" coefficients. 
  * 
  ****************************************************************************/
 DCT_space_int quantizeDCT(DCT_space block)
@@ -140,32 +159,41 @@ DCT_space_int quantizeDCT(DCT_space block)
  * 
  *  Purpose: Packs a, b, c, d, PB, PR into a 32-bit codeword
  *  Parameters: 
- *     1. A Codeword named "word" ______
+ *     1. word -- a Codeword struct containing the data to be packed
  *     2. An unsigned integer named "bits_left", which represents the number 
  *        of bits available to pack the Codeword structure into a 32-bit 
  *        codeword.
- *  Returns: A 64-bit unsigned integer representing the packed codeword
+ *  Returns: A 32-bit unsigned integer representing the packed codeword
  *  Effects: This function does not have any side effects. It does not modify 
  *           any variables or data outside of its scope.
  *  Expects:  
  * 
  ****************************************************************************/
-uint64_t packCodeword(Codeword word, unsigned bits_left) 
+uint32_t packCodeword(Codeword word)
 {
-        uint64_t raw_word = 0;
+        uint32_t raw_word = 0;
+        unsigned bit_count = MAX_WORD_SIZE;
 
-        raw_word = Bitpack_newu(raw_word, A_SIZE, bits_left -= A_SIZE, 
+        raw_word = Bitpack_newu(raw_word, A_SIZE, bit_count -= A_SIZE, 
                                                                 word.dct.a);
-        raw_word = Bitpack_news(raw_word, B_SIZE, bits_left -= B_SIZE, 
+        // fprintf(stderr, "raw word a: %" PRIu64 "\n", Bitpack_getu(raw_word, A_SIZE, 23));
+        raw_word = Bitpack_news(raw_word, B_SIZE, bit_count -= B_SIZE, 
                                                                 word.dct.b);
-        raw_word = Bitpack_news(raw_word, C_SIZE, bits_left -= C_SIZE, 
+        // fprintf(stderr, "raw word b: %" PRId64 "\n", Bitpack_getu(raw_word, B_SIZE, 18));
+        raw_word = Bitpack_news(raw_word, C_SIZE, bit_count -= C_SIZE, 
                                                                 word.dct.c);
-        raw_word = Bitpack_news(raw_word, D_SIZE, bits_left -= D_SIZE, 
+        // fprintf(stderr, "raw word c: %" PRId64 "\n", Bitpack_getu(raw_word, C_SIZE, 13));
+        raw_word = Bitpack_news(raw_word, D_SIZE, bit_count -= D_SIZE, 
                                                                 word.dct.d);
-        raw_word = Bitpack_newu(raw_word, PB_SIZE, bits_left -= PB_SIZE, 
+        // fprintf(stderr, "raw word d: %" PRId64 "\n", Bitpack_getu(raw_word, D_SIZE, 8));                                                   
+        raw_word = Bitpack_newu(raw_word, PB_SIZE, bit_count -= PB_SIZE, 
                                                                 word.avg_pb);
-        raw_word = Bitpack_newu(raw_word, PR_SIZE, bits_left -= PB_SIZE, 
+        // fprintf(stderr, "raw word pb: %" PRIu64 "\n", Bitpack_getu(raw_word, PB_SIZE, 4));
+        raw_word = Bitpack_newu(raw_word, PR_SIZE, bit_count -= PR_SIZE, 
                                                                 word.avg_pr);
+        // fprintf(stderr, "raw word pr: %" PRIu64 "\n", Bitpack_getu(raw_word, PR_SIZE, 0));
+        assert(bit_count == 0);
+        assert(Bitpack_fitsu(raw_word, MAX_WORD_SIZE));
         
         return raw_word;
 }
@@ -173,8 +201,8 @@ uint64_t packCodeword(Codeword word, unsigned bits_left)
  /**************************** printCodeword() *********************************
  * 
  *  Purpose: Prints a packed codeword represented as a 64-bit unsigned integer
- *  Parameters: 
- *      1. A 64-bit unsigned integer named "word", which represents the packed 
+ *  Parameters:
+ *      1. A 32-bit unsigned integer named "word", which represents the packed 
  *         codeword that is to be printed.
  *     2.  An unsigned integer named "bits_left", which represents the number of 
  *         bits in the codeword that are to be printed.
@@ -183,9 +211,9 @@ uint64_t packCodeword(Codeword word, unsigned bits_left)
  *  Expects:  
  * 
  ****************************************************************************/
-void printCodeword(uint64_t word, unsigned bits_left) 
+void printCodeword(uint32_t word) 
 {
-        for (unsigned w = bits_left; w > 0; w = w - BYTE_SIZE) {
+        for (unsigned w = MAX_WORD_SIZE; w > 0; w = w - BYTE_SIZE) {
                 putc(Bitpack_getu(word, BYTE_SIZE, w), stdout);
         }
 }
@@ -201,6 +229,8 @@ Brightness_values computeBrightnessValues(DCT_space block)
         float y_3 = block.a + block.b - block.c - block.d; 
         float y_4 = block.a + block.b + block.c + block.d;
         Brightness_values pixels = {y_1, y_2, y_3, y_4};
+        // fprintf(stderr, "--226--\na: %0d\nb: %d\nc: %d\nd: %d\n", block.a, block.b, block.c, block.d);
+        // fprintf(stderr, "--226--\ny_1: %f\ny_2: %f\ny_3: %f\ny_4: %f\n", y_1, y_2, y_3, y_4);
 
         return pixels;
 }
@@ -211,23 +241,37 @@ DCT_space quantizeRGB1(DCT_space_int block)
         float scaled_b = (float) block.b / 50.0;
         float scaled_c = (float) block.c / 50.0;
         float scaled_d = (float) block.d / 50.0;
-
+        // fprintf(stderr, "--238--\na: %0d\nb: %d\nc: %d\nd: %d\n", block.a, block.b, block.c, block.d);
         DCT_space quantized_dct = {scaled_a, scaled_b, scaled_c, scaled_d};
         return quantized_dct;
         
 }
 
 
-Codeword unpackCodeword1(uint64_t raw_word, unsigned bits_left) 
+Codeword unpackCodeword1(uint64_t raw_word) 
 {       
-        Codeword word;
-        word.dct.a = Bitpack_getu(raw_word, A_SIZE, bits_left -= A_SIZE);
-        word.dct.b = Bitpack_gets(raw_word, B_SIZE, bits_left -= B_SIZE);
-        word.dct.c = Bitpack_gets(raw_word, C_SIZE, bits_left -= C_SIZE);
-        word.dct.d = Bitpack_gets(raw_word, D_SIZE, bits_left -= D_SIZE);
-        word.avg_pb = Bitpack_getu(raw_word, PB_SIZE, bits_left -= PB_SIZE);
-        word.avg_pr = Bitpack_getu(raw_word, PR_SIZE, bits_left -= PR_SIZE);
+        unsigned bit_count = MAX_WORD_SIZE;
 
+        /* for a, b, c, d, pb, and pr, we obtain the LSB by subtracting their 
+         * respective LSB indices from bit_count */
+
+        uint32_t a = Bitpack_getu(raw_word, A_SIZE, bit_count -= A_SIZE);
+  
+        int32_t b = Bitpack_gets(raw_word, B_SIZE, bit_count -= B_SIZE);
+
+        int32_t c = Bitpack_gets(raw_word, C_SIZE, bit_count -= C_SIZE);
+        
+        int32_t d = Bitpack_gets(raw_word, D_SIZE, bit_count -= D_SIZE);
+
+        uint32_t avg_pb = Bitpack_getu(raw_word, PB_SIZE, bit_count -= PB_SIZE);
+
+        uint32_t avg_pr = Bitpack_getu(raw_word, PR_SIZE, bit_count -= PR_SIZE);
+        
+        
+        DCT_space_int word_dct = {a, b, c, d};
+        Codeword word = {word_dct, avg_pr, avg_pb};
+        
+        assert(bit_count == 0);
         return word;
 }
 
@@ -235,6 +279,7 @@ Codeword unpackCodeword1(uint64_t raw_word, unsigned bits_left)
 void compressImage(A2Methods_UArray2 original_image,
                         A2Methods_T methods, unsigned denominator)
 {
+        assert(original_image);
         int width = methods->width(original_image);
         int height = methods->height(original_image);
 
@@ -243,9 +288,9 @@ void compressImage(A2Methods_UArray2 original_image,
                 height -= height % 2;
         }
 
-        printf("COMP40 Compressed image format 2\n%u %u", width, height);
-        for (int row = 0; row < height; row+=2) { 
-                for (int col = 0; col < width; col+=2) {
+        // printf("COMP40 Compressed image format 2\n%u %u", width, height);
+        for (int row = 0; row < height; row += 2) { 
+                for (int col = 0; col < width; col += 2) {
                         /* Getting each pixel in the 2x2 block */
                         Pnm_rgb pixel0 =
                                 methods->at(original_image, col, row);
@@ -262,7 +307,8 @@ void compressImage(A2Methods_UArray2 original_image,
                         /* Convert from RGB to CV color space */
                         Pnm_componentvid_flt_pixels compvid_block = create_compvid_pixels_comp(rgb_block);
                         if (row == 0 && col == 0) {
-                                fprintf(stderr, "pixel 1:...%f\npixel 2:...%f\npixel 3:...%f\npixel 4:...%f\n",
+
+                                fprintf(stderr, "296: y_1: %f\ny_2: %f\ny_3: %f\ny_4: %f\n ----------------- \n",
                                 compvid_block.pix1.y, compvid_block.pix2.y, compvid_block.pix3.y, compvid_block.pix4.y);
                         }
                 
@@ -280,25 +326,25 @@ void compressImage(A2Methods_UArray2 original_image,
                         DCT_space_int DCT_int_values = quantizeDCT(values);
 
                         /* Bit packing */
-                        Codeword word1 = {DCT_int_values, chroma_pr, chroma_pb};
+                        Codeword encoded = {DCT_int_values, chroma_pr, chroma_pb};
                         //fprintf(stderr, "\nthe dcts:\na...%ld\nb...%ld\nc...%ld\nd...%ld\n", word.dct.a, word.dct.b, word.dct.c, word.dct.d);
-                        unsigned lsb_idx = MAX_WORD_SIZE;
-                        uint64_t packed_word = packCodeword(word1, lsb_idx);
-                        // printCodeword(packed_word, lsb_idx);
+                        uint32_t packed_word = packCodeword(encoded);
+                        // printCodeword(packed_word, MAX_WORD_SIZE);
+                        
 
 //----------------------------------------------------------------------------------------------------
                                 /* DECOMPRESSION STARTS BELOW */
 
                         /* Unpack word*/
-                        // uint64_t extracted_values = readInCodeword(input, lsb);
-                        Codeword word = unpackCodeword1(packed_word, lsb_idx);
+                        //uint64_t extracted_values = readInCodeword(input, lsb);
+                        Codeword unpacked_word = unpackCodeword1(packed_word);
                         
                          /* Convert 4-bit chroma codes to pB and pR */
-                        float pb = Arith40_chroma_of_index(chroma_pb);
-                        float pr = Arith40_chroma_of_index(chroma_pr);
+                        float pb = Arith40_chroma_of_index(unpacked_word.avg_pb);
+                        float pr = Arith40_chroma_of_index(unpacked_word.avg_pr);
 
                          /* Quantization to get floating point integers */
-                        DCT_space dct = quantizeRGB1(DCT_int_values);
+                        DCT_space dct = quantizeRGB1(unpacked_word.dct);
                 
 
                          /* Convert 4-bit chroma codes to pB and pR */
@@ -309,14 +355,12 @@ void compressImage(A2Methods_UArray2 original_image,
                         Brightness_values brightnesses = 
                                                 computeBrightnessValues(dct);
                         if (row == 0 && col == 0) {
-                                fprintf(stderr, "pixel 1:...%f\npixel 2:...%f\npixel 3:...%f\npixel 4:...%f\n",
+                                fprintf(stderr, "y_1: %f\ny_2: %f\ny_3: %f\ny_4: %f\n",
                                 brightnesses.y_1, brightnesses.y_2, brightnesses.y_3, brightnesses.y_4);
                         }
 
                         /* create CV pixels */
-                        Pnm_componentvid_flt_pixels comp_vid_block = 
-                                        create_compvid_pixels_decomp(pr, pb, 
-                                                                brightnesses);
+                        Pnm_componentvid_flt_pixels comp_vid_block = create_compvid_pixels_decomp(pr, pb, brightnesses);
 
                         /* Transform from CV to RGB color space */
                         Pnm_rgb_int_pixels new_rgb_block = 
@@ -331,6 +375,11 @@ void compressImage(A2Methods_UArray2 original_image,
                         *pixel1 = *(new_rgb_block.pix2);
                         *pixel2 = *(new_rgb_block.pix3);
                         *pixel3 = *(new_rgb_block.pix4);
+
+                        free(new_rgb_block.pix1);
+                        free(new_rgb_block.pix2);
+                        free(new_rgb_block.pix3);
+                        free(new_rgb_block.pix4);
 
                 }
         }

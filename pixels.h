@@ -32,8 +32,10 @@ typedef struct DCT_space {
 } DCT_space;
 
 typedef struct DCT_space_int {
-        uint64_t a;
-        int64_t b, c, d;
+        uint32_t a;
+        int32_t b;
+        int32_t c;
+        int32_t d;
 } DCT_space_int;
 
 typedef struct Brightness_values { 

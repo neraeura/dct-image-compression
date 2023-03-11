@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 }
 
 
- /**************************** compress40() ****************************
+ /***************************** compress40() *********************************
  * 
  *  Purpose: Delineates the overall control flow of the image compressor 
  *  Parameters: 

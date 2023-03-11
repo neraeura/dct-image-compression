@@ -33,8 +33,11 @@ Pnm_ppm readHeader(FILE *in)
                                 &width, &height); 
         assert(read == 2);
         int c = getc(in);
-         /* TODO: Does this effectively handle case if c != \n ?? */
-        assert(c = '\n');
+        if (c != '\n') { // cope with bad student format
+                fprintf(stderr, "Newline missing from compressed-image header\n");
+                ungetc(c, in);
+        }
+
         A2Methods_T methods = uarray2_methods_plain;
         A2Methods_UArray2 pixels = methods->new(width, height,
                                         sizeof(struct Pnm_rgb));
@@ -49,13 +52,22 @@ Pnm_ppm readHeader(FILE *in)
 
  /**************************** computeInverseDCT() ************************
  * 
- *  Purpose: Perform inverse discrete cosine transform (DCT) 
- *      
+ *  Purpose: Computes the inverse discrete cosine transform (DCT) coefficients 
+ *            of the luminance values y_1, y_2, y_3, y_4 in a given 2x2 image 
+ *            block of pixels 
+ *         
  *  Parameters: 
- *      
- *  Returns:  
- *  Effects: 
- *  Expects: 
+ *      1. block - a DCT_space struct representing a block of DCT coefficients
+ *
+ *  Returns: A Brightness_values struct containing the computed coefficients 
+ *           of the luminance values 
+ *
+ *  Effects: The function has no side effects on external variables or state.
+ *
+ *  Expects: Assumes that the input block contains valid DCT coefficients and 
+ *           that the inverse DCT can be calculated using the given equations.
+ *           The coefficients must be in the correct order and format for the 
+ *            inverse DCT equations to be applied correctly. 
  * 
  ****************************************************************************/
 Brightness_values computeInverseDCT(DCT_space block)
@@ -69,13 +81,23 @@ Brightness_values computeInverseDCT(DCT_space block)
         return pixels;
 }
 
- /**************************** quantizeRGB() ************************
+ /**************************** quantizeRGB() ********************************
  * 
- *  Purpose:
+ *  Purpose: Quantizes the DCT coefficients of a 2x2 image block 
+ *
  *  Parameters: 
- *  Returns:  
- *  Effects: 
- *  Expects: 
+ *      1. block -- A DCT_space_int struct which contains four integer values, 
+ *                  a, b, c, and d, which represent the DCT coefficients of the 
+ *                  RGB channels.
+ * 
+ *  Returns:  A DCT_space struct called quantized_dct that also contains four 
+ *            values, a, b, c, and d, which represent the quantized DCT 
+ *            coefficients.
+ * 
+ *  Effects: The function has no side effects on external variables or state.
+ * 
+ *  Expects: Assumes that the input values are stored as integers, and that the 
+ *           output values are stored as floating-point numbers.
  * 
  ****************************************************************************/
 DCT_space quantizeRGB(DCT_space_int block)
@@ -91,11 +113,27 @@ DCT_space quantizeRGB(DCT_space_int block)
 
  /**************************** unpackCodeword() ************************
  * 
- *  Purpose:
+ *  Purpose: Unpacks a compressed 2x2 image block represented by a single 
+ *           codeword 
+ * 
  *  Parameters: 
- *  Returns:  
- *  Effects: 
- *  Expects: 
+ *      1. raw_word - an unsigned 64-bit integer that represents a compressed 
+ *                    image block as a single codeword.
+ *      2. bits_left - an unsigned integer that specifies how many bits of the 
+ *                     codeword are still available for reading.
+ * 
+ *  Returns: A Codeword struct that contains the DCT coefficients and average 
+ *           color values for the corresponding block of the image.
+ * 
+ *  Effects: The function has no side effects on external variables or state.
+ * 
+ *  Expects: The function assumes that the input raw_word contains a valid 
+ *           compressed image block and that the bits_left parameter accurately 
+ *           specifies how many bits are available for reading from the 
+ *           codeword. The sizes of the various fields (A_SIZE, B_SIZE, C_SIZE, 
+ *           D_SIZE, PB_SIZE, PR_SIZE) are also assumed to be defined and to 
+ *           correspond correctly to the bitpacking used when compressing the
+ *           image.
  * 
  ****************************************************************************/
 Codeword unpackCodeword(uint64_t raw_word, unsigned bits_left) 
@@ -113,22 +151,40 @@ Codeword unpackCodeword(uint64_t raw_word, unsigned bits_left)
 
  /**************************** readInCodeword() ************************
  * 
- *  Purpose:
+ *  Purpose: Reads in a single codeword from the input file stream in sequence, 
+ *           remembering that each word is stored in big-endian order, with 
+ *           the MSB first.
+ * 
  *  Parameters: 
- *  Returns:  
- *  Effects: 
- *  Expects: 
+ *      1. input - a pointer to a FILE object representing the input file stream 
+ *               from which the compressed image blocks are read.
+ *     2. bits_left - an unsigned integer that specifies how many bits of the 
+ *                    current codeword are still available for reading.
+ * 
+ *  Returns: An unsigned 64-bit integer that represents the codeword read from 
+ *           the input file.
+ * 
+ *  Effects: If the supplied file is too short, i.e. the number of codewords
+ *           is too low for the stated width and height, or the last one is 
+ *           incomplete, this function fails with a Checked Runtime Error 
+ * 
+ *  Expects: Assumes that the input file stream is open and points to a valid 
+ *           input file containing compressed image blocks. It also assumes that 
+ *           the bits_left parameter accurately specifies how many bits of the 
+ *           current codeword are still available for reading from the input 
+ *           file, and that the input file stream is properly formatted with 
+ *           respect to the compressed image block encoding scheme.
  * 
  ****************************************************************************/
 uint64_t readInCodeword(FILE *input, unsigned bits_left) 
-{       
-        /* Piping each lsb amount into a variable and checking if the EOF 
-        character is present in the characters  */
+{
+
         uint64_t raw_word = 0;
         uint64_t single_byte;
 
         for (unsigned w = bits_left; w > 0; w = w - BYTE_SIZE) {
                 single_byte = getc(input);
+                assert(bits_left % 8 == 0);
                 assert((int) single_byte != EOF);
                 /* within byte, align codeword */
                 single_byte = single_byte << w;
@@ -136,13 +192,16 @@ uint64_t readInCodeword(FILE *input, unsigned bits_left)
         }
 
         return raw_word;
+
 }
+
+
 
 /* TODO: ASK TA IF THIS IS MODULAR */
 
  /**************************** decompressImage() ************************
  * 
- *  Purpose:
+ *  Purpose: 
  *  Parameters: 
  *  Returns:  
  *  Effects: 
