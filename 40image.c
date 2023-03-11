@@ -56,53 +56,53 @@ int main(int argc, char *argv[])
 
  /***************************** compress40() *********************************
  * 
- *  Purpose: Delineates the overall control flow of the image compressor 
+ *  Purpose: 
  *  Parameters: 
- *      1. An file pointer that holds the address of the input file containing
- *         the PPM image to compress
+ *      1. original_file -- a file pointer that holds the address of the input 
+ *                         file containing the PPM image to compress
  *  Returns: None
- *  Effects: Writes a compressed PPM to stdout 
- *  Expects: A valid PPM image for reading
+ *  Effects: Writes a compressed PPM to stdout. It is a Checked Runtime Error
+ *           if 'methods' has been improperly initialized to allow access to A2 
+ *           functions
+ *  Expects: Assumes the file pointer points to a valid input image file 
+ *           that can be read using the Pnm_ppmread function.
  * 
  ****************************************************************************/
-void compress40(FILE *input)
+void compress40(FILE *original_file)
 {
-        /* Get methods object in order to access a2 functions */
         A2Methods_T methods = uarray2_methods_plain;
         assert(methods != NULL);
-        
-        /* Create a ppm representing the original image */
-        Pnm_ppm ppm;
-        ppm = Pnm_ppmread(input, methods);
 
-        /* Create an array 'original_image' that stores the pixels in the ppm */
+        Pnm_ppm ppm;
+        ppm = Pnm_ppmread(original_file, methods);
         A2Methods_UArray2 original_image = ppm->pixels; 
 
-        // A2Methods_UArray2 new_image = remake_image(original_image, map, methods);
         compressImage(original_image, methods, ppm->denominator);
         Pnm_ppmwrite(stdout, ppm);
         Pnm_ppmfree(&ppm); 
-
 }
 
  /**************************** decompress40() ****************************
  * 
- *  Purpose: Delineates the overall control flow of the image deompressor 
+ *  Purpose: 
  *  Parameters: 
- *      1. An file pointer that holds the address of the compressed file 
- *         containing the PPM image to decompress
+ *      1. compressed_file -- a file pointer that holds the address of the 
+ *                            compressed file containing the PPM image to 
+ *                            decompress
  *  Returns: None
- *  Effects: Writes a decompressed PPM to stdout 
- *  Expects: A valid compressed PPM image for reading
+ *  Effects: Writes a decompressed PPM to stdout. It is a Checked Runtime Error
+ *           if 'methods' has been improperly initialized to allow access to A2 
+ *           functions
+ *  Expects: Assumes the file pointer points to a valid compressed PPM image 
+ *           file that can be read 
  * 
  ****************************************************************************/
-void decompress40(FILE *input)
+void decompress40(FILE *compressed_file)
 {
         A2Methods_T methods = uarray2_methods_plain;
         assert(methods != NULL);
-        Pnm_ppm new_image = readHeader(input);
-        decompressImage(new_image->pixels, methods, input);
-        /* will this follow row-major and big-endian ?*/
-        Pnm_ppmwrite(stdout, new_image);
+        Pnm_ppm compressed_image = readHeader(compressed_file);
+        decompressImage(compressed_image->pixels, methods, compressed_file);
+        Pnm_ppmwrite(stdout, compressed_image);
 }
 

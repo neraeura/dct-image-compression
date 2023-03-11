@@ -1,21 +1,30 @@
-#include <string.h>
+/**************************************************************************
+ *
+ *                             decompression.c
+ * 
+ *     Assignment: arith
+ *     Authors:  Nora A-Rahim and Daniel Opara
+ *     CS Logins: narahi01 and dopara01
+ *     Date:  March 11, 2023
+ *
+ *     
+ *     
+ *
+ **************************************************************************/
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
+#include <inttypes.h>
 #include <assert.h>
-#include <math.h>
 
-#include "a2methods.h"
-#include "a2plain.h"
-#include "a2blocked.h"
-#include "pixels.h"
-#include "pnm.h"
 #include "decompression.h"
-#include "arith40.h"
+#include "colorSpace.h"
+#include "DCTransforms.h"
 #include "bitpack.h"
+#include "fileIO.h"
+#include "arith40.h"
 
 static const unsigned DENOMINATOR = 255;
-static const unsigned BYTE_SIZE = 8;
 static const unsigned A_SIZE = 9;
 static const unsigned B_SIZE = 5;
 static const unsigned C_SIZE = 5;
@@ -26,90 +35,11 @@ static const unsigned MAX_WORD_SIZE = A_SIZE + B_SIZE + C_SIZE + D_SIZE
                                                         + PR_SIZE + PB_SIZE;
 
 
-Pnm_ppm readHeader(FILE *in)
-{
-        unsigned height, width;
-        int read = fscanf(in, "COMP40 Compressed image format 2\n%u %u", 
-                                &width, &height); 
-        assert(read == 2);
-        int c = getc(in);
-        if (c != '\n') { // cope with bad student format
-                fprintf(stderr, "Newline missing from compressed-image header\n");
-                ungetc(c, in);
-        }
 
-        A2Methods_T methods = uarray2_methods_plain;
-        A2Methods_UArray2 pixels = methods->new(width, height,
-                                        sizeof(struct Pnm_rgb));
-        Pnm_ppm pixmap = malloc(sizeof(*pixmap));
-        pixmap->height = height;
-        pixmap->width = width;
-        pixmap->denominator = DENOMINATOR;
-        pixmap->pixels = pixels;
-        
-        return pixmap;
-}
-
- /**************************** computeInverseDCT() ************************
- * 
- *  Purpose: Computes the inverse discrete cosine transform (DCT) coefficients 
- *            of the luminance values y_1, y_2, y_3, y_4 in a given 2x2 image 
- *            block of pixels 
- *         
- *  Parameters: 
- *      1. block - a DCT_space struct representing a block of DCT coefficients
- *
- *  Returns: A Brightness_values struct containing the computed coefficients 
- *           of the luminance values 
- *
- *  Effects: The function has no side effects on external variables or state.
- *
- *  Expects: Assumes that the input block contains valid DCT coefficients and 
- *           that the inverse DCT can be calculated using the given equations.
- *           The coefficients must be in the correct order and format for the 
- *            inverse DCT equations to be applied correctly. 
- * 
- ****************************************************************************/
-Brightness_values computeInverseDCT(DCT_space block)
-{
-        float y_1 = block.a - block.b - block.c + block.d;
-        float y_2 = block.a - block.b + block.c - block.d; 
-        float y_3 = block.a + block.b - block.c - block.d; 
-        float y_4 = block.a + block.b + block.c + block.d;
-        Brightness_values pixels = {y_1, y_2, y_3, y_4};
- 
-        return pixels;
-}
-
- /**************************** quantizeRGB() ********************************
- * 
- *  Purpose: Quantizes the DCT coefficients of a 2x2 image block 
- *
- *  Parameters: 
- *      1. block -- A DCT_space_int struct which contains four integer values, 
- *                  a, b, c, and d, which represent the DCT coefficients of the 
- *                  RGB channels.
- * 
- *  Returns:  A DCT_space struct called quantized_dct that also contains four 
- *            values, a, b, c, and d, which represent the quantized DCT 
- *            coefficients.
- * 
- *  Effects: The function has no side effects on external variables or state.
- * 
- *  Expects: Assumes that the input values are stored as integers, and that the 
- *           output values are stored as floating-point numbers.
- * 
- ****************************************************************************/
-DCT_space quantizeRGB(DCT_space_int block)
-{
-        float scaled_a = (float) block.a / 511.0; 
-        float scaled_b = (float) block.b / 50.0;
-        float scaled_c = (float) block.c / 50.0;
-        float scaled_d = (float) block.d / 50.0;
-
-        DCT_space quantized_dct = {scaled_a, scaled_b, scaled_c, scaled_d};
-        return quantized_dct;
-}
+typedef struct Codeword {
+        DCT_space_int dct;
+        unsigned avg_pr, avg_pb;
+} Codeword;
 
  /**************************** unpackCodeword() ************************
  * 
@@ -163,70 +93,39 @@ Codeword unpackCodeword(uint64_t raw_word)
         return word;
 }
 
- /**************************** readInCodeword() ************************
- * 
- *  Purpose: Reads in a single codeword from the input file stream in sequence, 
- *           remembering that each word is stored in big-endian order, with 
- *           the MSB first.
- * 
- *  Parameters: 
- *      1. input - a pointer to a FILE object representing the input file stream 
- *               from which the compressed image blocks are read.
- *     2. bits_left - an unsigned integer that specifies how many bits of the 
- *                    current codeword are still available for reading.
- * 
- *  Returns: An unsigned 64-bit integer that represents the codeword read from 
- *           the input file.
- * 
- *  Effects: If the supplied file is too short, i.e. the number of codewords
- *           is too low for the stated width and height, or the last one is 
- *           incomplete, this function fails with a Checked Runtime Error 
- * 
- *  Expects: Assumes that the input file stream is open and points to a valid 
- *           input file containing compressed image blocks. It also assumes that 
- *           the bits_left parameter accurately specifies how many bits of the 
- *           current codeword are still available for reading from the input 
- *           file, and that the input file stream is properly formatted with 
- *           respect to the compressed image block encoding scheme.
- * 
- ****************************************************************************/
-uint64_t readInCodeword(FILE *input, unsigned bits_left) 
-{
-
-        uint64_t raw_word = 0;
-        uint64_t single_byte;
-
-        for (unsigned w = bits_left; w > 0; w = w - BYTE_SIZE) {
-                single_byte = getc(input);
-                assert(bits_left % 8 == 0);
-                assert((int) single_byte != EOF);
-                /* within byte, align codeword */
-                single_byte = single_byte << w;
-                raw_word = raw_word | single_byte;
-        }
-
-        return raw_word;
-
-}
-
-
-
-/* TODO: ASK TA IF THIS IS MODULAR */
 
  /**************************** decompressImage() ************************
  * 
- *  Purpose: 
- *  Parameters: 
- *  Returns:  
- *  Effects: 
- *  Expects: 
+ *  Purpose: Delineates the overall control flow of the image decompressor 
+ * 
+ *  Parameters:
+ *      1. compressed_image --the original image array in compressed format 
+ *                                   
+ *      2. methods: an A2Methods_T object to give access to functions that 
+ *                  operate on the image
+ *      3. compressed_file: a file pointer to the compressed image file
+ * 
+ *  Returns: None
+ * 
+ *  Effects: The function modifies the dimensions of the compressed_image array 
+ *           to write the decompressed image data. It also frees up memory 
+ *           allocated by pixel creation functions. It is a Checked Runtime 
+ *           Error for  compressed_image, compressed_file, or methods to be 
+ *           NULL.
+ * 
+ *  Expects: The function expects the compressed_image array to be in compressed 
+ *           format, the methods object to be initialized, and the 
+ *           compressed_file pointer to point to a valid compressed image file
  * 
  ****************************************************************************/
-void decompressImage(A2Methods_UArray2 original_image, A2Methods_T methods,
-                                                                FILE *input)
+void decompressImage(A2Methods_UArray2 compressed_image, A2Methods_T methods,
+                                                        FILE *compressed_file)
 {
-        int width = methods->width(original_image);
-        int height = methods->height(original_image);
+        assert(compressed_image != NULL);
+        assert(methods != NULL);
+        assert(compressed_file != NULL);
+        int width = methods->width(compressed_image);
+        int height = methods->height(compressed_image);
 
         if (width % 2 != 0 || height % 2 != 0) {
                 width -= width % 2;
@@ -236,58 +135,51 @@ void decompressImage(A2Methods_UArray2 original_image, A2Methods_T methods,
         for (int col = 0; col < width; col+=2) { 
                 for (int row = 0; row < height; row+=2) {
 
-                        /* Unpacking */
-                        unsigned lsb = MAX_WORD_SIZE;
-                        uint32_t extracted_values = readInCodeword(input, lsb);
-                        Codeword unpacked_word = unpackCodeword1(packed_word);
-
-                         /* Convert 4-bit chroma codes to pB and pR */
-                        float pb = Arith40_chroma_of_index(unpacked_word.avg_pb);
-                        float pr = Arith40_chroma_of_index(unpacked_word.avg_pr);
-
-                        /* Quantization to get floating point integers */
-                        DCT_space dct = quantizeRGB(unpacked_word.dct);
+                        uint64_t extracted_values = 
+                                readInCodeword(compressed_file, MAX_WORD_SIZE);
+                        Codeword unpacked_word = 
+                                                unpackCodeword(extracted_values);
+                        
                 
+                        float pb = 
+                                Arith40_chroma_of_index(unpacked_word.avg_pb);
+                        float pr = 
+                                Arith40_chroma_of_index(unpacked_word.avg_pr);
 
-                        // /* Convert 4-bit chroma codes to pB and pR */
-                        // unsigned avgpr = Arith40_chroma_of_index(chroma_pr);
-                        // unsigned avgpb = Arith40_chroma_of_index(chroma_pb)
+             
+                        DCT_space dct = quantizeInverseDCT(unpacked_word.dct);
 
-                         /* Inverse DCT */
-                        Brightness_values brightnesses = 
-                                                computeInverseDCT(dct);
+        
+                        Brightness_values brightnesses =
+                                                        computeInverseDCT(dct);
 
-                        /* create CV pixels */
+        
                         Pnm_componentvid_flt_pixels comp_vid_block = 
-                                        create_compvid_pixels_decomp(pr, pb, 
-                                                                brightnesses);
+                        create_compvid_pixels_decomp(pr, pb, brightnesses);
 
-                        /* Transform from CV to RGB color space */
-                        Pnm_rgb_int_pixels rgb_block = 
-                                create_rgbint_pixels(comp_vid_block,
-                                                        DENOMINATOR);
+        
+                        Pnm_rgb_int_pixels new_rgb_block = 
+                                create_rgbint_pixels(comp_vid_block, DENOMINATOR);
 
-                        /* Getting each pixel in the 2x2 block */
                         Pnm_rgb pixel0 =
-                                methods->at(original_image, col, row);
+                                methods->at(compressed_image, col, row);
                         Pnm_rgb pixel1 =
-                                methods->at(original_image, col + 1, row);
+                                methods->at(compressed_image, col + 1, row);
                         Pnm_rgb pixel2 =
-                                methods->at(original_image, col, row + 1);
+                                methods->at(compressed_image, col, row + 1);
                         Pnm_rgb pixel3 =
-                                methods->at(original_image, col + 1, row + 1);
+                                methods->at(compressed_image, col + 1, row + 1);
 
-                        // Might not work, we may need to malloc the pixels
-                        /* Putting each pixel into PPM*/
-                        *pixel0 = *(rgb_block.pix1);
-                        *pixel1 = *(rgb_block.pix2);
-                        *pixel2 = *(rgb_block.pix3);
-                        *pixel3 = *(rgb_block.pix4);
+                        *pixel0 = *(new_rgb_block.pix1);
+                        *pixel1 = *(new_rgb_block.pix2);
+                        *pixel2 = *(new_rgb_block.pix3);
+                        *pixel3 = *(new_rgb_block.pix4);
 
-                        free(rgb_block.pix1);
-                        free(rgb_block.pix2);
-                        free(rgb_block.pix3);
-                        free(rgb_block.pix4);
+                        free(new_rgb_block.pix1);
+                        free(new_rgb_block.pix2);
+                        free(new_rgb_block.pix3);
+                        free(new_rgb_block.pix4);
+
                 }
         }
 }
