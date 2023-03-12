@@ -36,7 +36,11 @@ static const unsigned BYTES = 8;
  *         codeword that is to be printed.
  *  Returns: None
  *  Effects: This function outputs the packed codeword to standard output
- *  Expects:  
+ *  Expects: Assumes that the input file stream is open and points to a valid 
+ *           input file containing compressed image blocks. Additionally, the 
+ *           compressed PPM image file must have the correct format and values
+ *           for the width, height, and denominator. 
+ *           
  * 
  ****************************************************************************/
 void printCodeword(uint32_t word) 
@@ -49,13 +53,14 @@ void printCodeword(uint32_t word)
 
  /**************************** readInCodeword() ************************
  * 
- *  Purpose: Reads in a single codeword from the input file stream in sequence, 
- *           remembering that each word is stored in big-endian order, with 
- *           the MSB first.
+ *  Purpose: Reads in a single codeword from the file stream containing the 
+ *           compressed PPM in sequence, remembering that each word is 
+ *           stored in big-endian order, with the MSB first.
  * 
  *  Parameters: 
- *      1. input - a pointer to a FILE object representing the input file stream 
- *               from which the compressed image blocks are read.
+ *      1. compressed_file - a pointer to a FILE object representing the 
+ *                           input file stream from which the compressed image 
+ *                           blocks are read.
  * 
  *  Returns: An unsigned 64-bit integer that represents the codeword read from 
  *           the input file.
@@ -65,21 +70,18 @@ void printCodeword(uint32_t word)
  *           incomplete, this function fails with a Checked Runtime Error 
  * 
  *  Expects: Assumes that the input file stream is open and points to a valid 
- *           input file containing compressed image blocks. It also assumes that
- *           the bits_left parameter accurately specifies how many bits of the 
- *           current codeword are still available for reading from the input 
- *           file, and that the input file stream is properly formatted with 
- *           respect to the compressed image block encoding scheme.
+ *           input file containing compressed image blocks. Additionally, the 
+ *           compressed PPM image file must have the correct format and values
+ *           for the width, height, and denominator. 
  * 
  ****************************************************************************/
 
-uint32_t readInCodeword(FILE *input) 
+uint32_t readInCodeword(FILE *compressed_file) 
 {
-
         uint32_t raw_word = 0;
 
         for (int w = MAX_WORD_SIZE - BYTES; w >= 0; w -= BYTES) {
-                int single_byte = getc(input);
+                int single_byte = getc(compressed_file);
                 assert(single_byte != EOF);
                 /* This is done to ensure that a value is represented as an 
                 unsigned byte or ASCII character code with a value between 
@@ -88,9 +90,7 @@ uint32_t readInCodeword(FILE *input)
                                 ((single_byte > 255) ? 255 : single_byte);
                 raw_word = raw_word | single_byte << w;
         }
-
         return raw_word;
-
 }
 
 
@@ -106,7 +106,8 @@ uint32_t readInCodeword(FILE *input)
  *           information read from the input file.
  *
  *  Effects: The function allocates memory for the new Pnm_ppm struct and its 
- *           pixel array using malloc(). 
+ *           pixel array using malloc(). The function outputs an error 
+ *           message if a newline is missing from the header.
  * 
  * 
  *  Expects: Assumes that the input file stream contains the correct header 
@@ -124,7 +125,7 @@ Pnm_ppm readHeader(FILE *compressed_file)
         assert(read == 2);
         int c = getc(compressed_file);
         if (c != '\n') { 
-                fprintf(stderr, "Error: Missing a newline from header\n");
+                fprintf(stderr, "Error: Newline Missing \n");
                 ungetc(c, compressed_file);
         }
 
