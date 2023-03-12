@@ -7,7 +7,11 @@
  *     CS Logins: narahi01 and dopara01
  *     Date:  March 11, 2023
  *
- *     
+ * 
+ * 
+ *     This file contains a C implementation of an image decompressor. 
+ *     This program performs image compression using Discrete Cosine Transform 
+ *     (DCT) and vector quantization.
  *     
  *
  **************************************************************************/
@@ -24,6 +28,8 @@
 #include "fileIO.h"
 #include "arith40.h"
 
+#define header "COMP40 Compressed image format 2\n%u %u"
+
 static const unsigned DENOMINATOR = 255;
 static const unsigned A_SIZE = 9;
 static const unsigned B_SIZE = 5;
@@ -31,15 +37,7 @@ static const unsigned C_SIZE = 5;
 static const unsigned D_SIZE = 5;
 static const unsigned PR_SIZE = 4;
 static const unsigned PB_SIZE = 4;
-static const unsigned MAX_WORD_SIZE = A_SIZE + B_SIZE + C_SIZE + D_SIZE
-                                                        + PR_SIZE + PB_SIZE;
-
-
-
-typedef struct Codeword {
-        DCT_space_int dct;
-        unsigned avg_pr, avg_pb;
-} Codeword;
+static const unsigned MAX_WORD_SIZE = 32;
 
  /**************************** unpackCodeword() ************************
  * 
@@ -132,13 +130,14 @@ void decompressImage(A2Methods_UArray2 compressed_image, A2Methods_T methods,
                 height -= height % 2;
         }
 
-        for (int col = 0; col < width; col+=2) { 
-                for (int row = 0; row < height; row+=2) {
+        for (int row = 0; row < height; row += 2) { 
+                for (int col = 0; col < width; col += 2) {
 
-                        uint64_t extracted_values = 
-                                readInCodeword(compressed_file, MAX_WORD_SIZE);
+                        uint32_t extracted_values = 
+                                readInCodeword(compressed_file);
+                        
                         Codeword unpacked_word = 
-                                                unpackCodeword(extracted_values);
+                                              unpackCodeword(extracted_values);
                         
                 
                         float pb = 
@@ -159,7 +158,8 @@ void decompressImage(A2Methods_UArray2 compressed_image, A2Methods_T methods,
 
         
                         Pnm_rgb_int_pixels new_rgb_block = 
-                                create_rgbint_pixels(comp_vid_block, DENOMINATOR);
+                                create_rgbint_pixels(comp_vid_block, 
+                                                        DENOMINATOR);
 
                         Pnm_rgb pixel0 =
                                 methods->at(compressed_image, col, row);
@@ -181,6 +181,7 @@ void decompressImage(A2Methods_UArray2 compressed_image, A2Methods_T methods,
                         free(new_rgb_block.pix4);
 
                 }
+                
         }
 }
 

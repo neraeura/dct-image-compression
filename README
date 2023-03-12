@@ -1,0 +1,99 @@
+Partners:
+
+Partner 1:  Daniel Opara      Login dopara01
+
+Partner 2:  Nora A-Rahim      Login narahim01
+
+*****************************************************************************
+
+Acknowledgments
+---------------
+        Received help from TAs, notably Jason, MJ, Sruthi, and Randy
+        Used StackOverflow and GeeksforGeeks to aid in debugging
+        
+Implementation
+--------------
+        As far as we know, both the compression and decompression 
+        processes have been fully and accurately executed.
+
+Architecture
+------------
+        The program was structured into seperate modules wherein each individual 
+        module  was tasked with handling a distinct phase of the compression and 
+        inverse decompression algorithms. 
+        
+        We chose to structure our solution in this manner because each 
+        level of both the compression and decompression algorithms must
+        know much of the same information in order to accurately perform 
+        their functions. As such, in order to exhibit strong modularity and 
+        secret keeping, functions which perform phases which align with this 
+        description are grouped together to perform similar tasks, seperated 
+        from those who do not. 
+        
+        With that being said, there are special cases where 
+        certain modules that are operationally distinct must be aware of the 
+        data types they paramaterize and return, and in those instances are 
+        given access to those structures in order to compute vital 
+        information required for the next phase of compression/decompression. 
+        To achieve this, we implemented a module called 'sharedData' to contain
+        the data structures and functions that are needed by multiple modules. 
+        
+
+        The modules listed are used in compress40 which are subsequently used by 
+        the client, in our case 40image. Because of this abstraction, 
+        the methods of conversion are hidden from the client; all the client
+        needs to do is specify compression or decompression.
+
+        * In total we created 6 modules... *
+
+          1 - decompression:      
+               * This module can be seen as a type of psuedo-main that is the
+                 driver that carries out all actions required to decompress
+                 a file. It calls on the functions provided by other smaller 
+                 modules, such as fileIO, colorSpace, etc. to have a file
+                 undergo the process of decompression to restore the file to
+                 its original state
+          2 - compression:      
+               * This module can be seen as a type of psuedo-main that is the
+                 driver that carries out all actions required to compress
+                 a file. It calls on the functions provided by other smaller 
+                 modules, such as fileIO, colorSpace, etc. to have a file
+                 undergo the process of compression to reduce  the number
+                 of bits needed to represent data.
+          3 - fileIO:
+               * This module contains functions for reading and writing
+                 compressed PPM image files.
+          4 - colorSpace:
+               * Implements conversions between Y'Pb'Pr and RGB color spaces,
+                 scaled and floating point representations, as well as utilities
+                 for manipulating color values in PPM images. 
+          5 - DCTransform:
+               * Handles transformation from RGB to Component Video Space 
+                 and from Component Video to RGB through inclusion of functions 
+                 that perform a Discrete Cosine Transformation, linear 
+                 quantization and their inverse operations. 
+          6 - bitpack:
+               * Establishes an interface for packing, unpacking, and changing    
+                 bits in a 64 bit word.
+          7 - sharedData: 
+               * Contains data structures and functions needed by multiple 
+                 modules vital for carrying out vital phases of compression 
+                 and decompression.
+        
+
+
+
+Time Spent Analyzing Problem
+-----------------------------
+        ~20 hours
+
+Time Spent Solving Problems After Analysis
+-----------------------------------------
+        ~20 hours (the passage of time is no longer a matter of consequence to
+                        mineself; both the rising sun ushering the dawn of a new 
+                        day and the luminous moon radiating in dark nights bound 
+                        my circadian clock no longer. Alas, I am bound to my   
+                        metal muse, my binary beast that roars with the power of
+                        a million computations. She chains my very being to her 
+                        plastic keys, my eyes are glued to her gateway of 
+                        knowledge and information! )

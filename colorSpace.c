@@ -7,10 +7,11 @@
  *     CS Logins: narahi01 and dopara01
  *     Date:  March 11, 2023
  *
- *     This file contains the implementation for colorSpace.h. 
+ *     This file contains the implementation of the colorSpace interface
  *     
- *     colorSpace.c implements conversions between Y'Pb'Pr and RGB color spaces 
- *     as well as utilities for manipulating color values in PPM images.
+ *     colorSpace.c implements conversions between Y'Pb'Pr and RGB color spaces, 
+ *     scaled and floating point representations, as well as utilities for 
+ *     manipulating color values in PPM images.
  *     
  *
  **************************************************************************/
@@ -92,7 +93,7 @@ float computePB_avg(Pnm_componentvid_flt_pixels block)
  *  Returns: A Pnm_rgb_flt struct representing the new pixel with floating-point 
  *           color channel values.
  *      
- *  Effects: 
+ *  Effects: The function has no side effects on external variables or state.
  * 
  *  Expects: Assumes that pixel is a valid pointer to a Pnm_rgb struct. Assumes
  *           denominator is a non-zero float value. If the denominator is zero, 
@@ -124,7 +125,7 @@ Pnm_rgb_flt create_rgbflt_pixel(Pnm_rgb pixel, float denominator)
  *  Returns: A Pnm_rgb_flt_pixels struct containing four Pnm_rgb_flt structs 
  *           representing the scaled pixels.
  *
- *  Effects:
+ *  Effects: The function has no side effects on external variables or state.
  *
  *  Expects: Assumes that the four Pnm_rgb pixels passed in as arguments are not 
  *           NULL and that the denominator passed in as an argument is greater  
@@ -194,6 +195,7 @@ Pnm_rgb create_rgbint_pixel(Pnm_componentvid_flt pixel, float denominator)
  *           Pnm_componentvid_flt_pixels, where each pixel in the 
  *           Pnm_componentvid_flt_pixels array is converted to Pnm_rgb 
  *           format with an integer range of 0-255.
+ * 
  *  Parameters: 
  *      1. block -- an array of Pnm_componentvid_flt_pixels, which represents a 
  *                  2x2 block of pixels in component-video format.
@@ -202,7 +204,9 @@ Pnm_rgb create_rgbint_pixel(Pnm_componentvid_flt pixel, float denominator)
  *                        values.
  *  Returns: A Pnm_rgb_int_pixels struct that contains the converted Pnm_rgb 
  *           pixels.
- *  Effects: 
+ * 
+ *  Effects: The function has no side effects on external variables or state.
+ * 
  *  Expects: The input Pnm_componentvid_flt_pixels array must have four 
  *           elements. The denominator value should be a positive integer value. 
  *           The input Pnm_componentvid_flt_pixels values should be in the 
@@ -234,7 +238,7 @@ unsigned denominator)
  *  Returns: A Pnm_componentvid_flt struct representing the new pixel with 
  *           Y'PbPr component video color model values.
  * 
- *  Effects: 
+ *  Effects: The function has no side effects on external variables or state.
  * 
  *  Expects: Assumes that pixel is a valid Pnm_rgb_flt struct.
  * 
@@ -260,14 +264,18 @@ Pnm_componentvid_flt create_componentvid_pixel(Pnm_rgb_flt pixel)
  *  Purpose: Converts a block of four Pnm_rgb_flt pixels into a block of four 
  *           Pnm_componentvid_flt pixels, effecitvely transforming from 
  *           RGB to component video color space.
+ * 
  *  Parameters: 
  *      1. A block of four Pnm_rgb_flt pixels represented by the structure 
  *         Pnm_rgb_flt_pixels, containing floating-point values for its red, 
  *         green, and blue components
+ * 
  *  Returns: A block of four Pnm_componentvid_flt pixels represented by the 
  *          structure Pnm_componentvid_flt_pixels, contianing the Y, Pb, and Pr 
  *          values for a 2x2 group of pixels
- *  Effects: 
+ * 
+ *  Effects: The function has no side effects on external variables or state.
+ * 
  *  Expects: Assumes the input block contains valid Pnm_rgb_flt pixels with 
  *           values between 0 and the specified denominator. The 
  *           Pnm_componentvid_flt_pixels structure must be defined with four 
@@ -305,7 +313,7 @@ Pnm_componentvid_flt_pixels create_compvid_pixels_comp(Pnm_rgb_flt_pixels block)
  *  Returns: A block of four Pnm_componentvid_flt_pixels struct that 
  *           represents the decompressed version of the image 
  * 
- *  Effects: 
+ *  Effects: The function has no side effects on external variables or state.
  * 
  *  Expects:  The function expects valid float values for pr and pb, and a 
  *            valid Brightness_values struct containing the brightness component 

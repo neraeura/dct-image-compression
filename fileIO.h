@@ -16,12 +16,15 @@
 #include "pnm.h"
 
 
-void printCodeword(uint32_t word);
-uint64_t readInCodeword(FILE *input, unsigned bits_left);
-Pnm_ppm readHeader(FILE *in);
+void 
+printCodeword(uint32_t word);
 
+uint32_t 
+readInCodeword(FILE *input);
 
-#undef A2
+Pnm_ppm 
+readHeader(FILE *in);
+
 
 #endif
 

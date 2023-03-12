@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
                         break;
                 }
         }
-        assert(argc - i <= 1);    /* at most one file on command line */
+        assert(argc - i <= 1); 
         if (i < argc) {
                 FILE *fp = fopen(argv[i], "r");
                 assert(fp != NULL);
@@ -56,14 +56,16 @@ int main(int argc, char *argv[])
 
  /***************************** compress40() *********************************
  * 
- *  Purpose: 
+ *  Purpose: Compress a PPM image
+ * 
  *  Parameters: 
  *      1. original_file -- a file pointer that holds the address of the input 
  *                         file containing the PPM image to compress
  *  Returns: None
+ * 
  *  Effects: Writes a compressed PPM to stdout. It is a Checked Runtime Error
- *           if 'methods' has been improperly initialized to allow access to A2 
- *           functions
+ *           if 'methods' or 'ppm' has been improperly initialized 
+ * 
  *  Expects: Assumes the file pointer points to a valid input image file 
  *           that can be read using the Pnm_ppmread function.
  * 
@@ -74,6 +76,7 @@ void compress40(FILE *original_file)
         assert(methods != NULL);
 
         Pnm_ppm ppm;
+        assert(ppm != NULL);
         ppm = Pnm_ppmread(original_file, methods);
         A2Methods_UArray2 original_image = ppm->pixels; 
 
@@ -84,15 +87,18 @@ void compress40(FILE *original_file)
 
  /**************************** decompress40() ****************************
  * 
- *  Purpose: 
+ *  Purpose: Decompresses a PPM image
+ * 
  *  Parameters: 
  *      1. compressed_file -- a file pointer that holds the address of the 
  *                            compressed file containing the PPM image to 
  *                            decompress
  *  Returns: None
+ * 
  *  Effects: Writes a decompressed PPM to stdout. It is a Checked Runtime Error
  *           if 'methods' has been improperly initialized to allow access to A2 
  *           functions
+ * 
  *  Expects: Assumes the file pointer points to a valid compressed PPM image 
  *           file that can be read 
  * 
@@ -104,5 +110,6 @@ void decompress40(FILE *compressed_file)
         Pnm_ppm compressed_image = readHeader(compressed_file);
         decompressImage(compressed_image->pixels, methods, compressed_file);
         Pnm_ppmwrite(stdout, compressed_image);
+        Pnm_ppmfree(&compressed_image);
 }
 

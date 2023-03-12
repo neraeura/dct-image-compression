@@ -8,7 +8,7 @@
  *     CS Logins: narahi01 and dopara01
  *     Date:  March 11, 2023
  *
- *      This file contains the implementation for DCTransforms.h. 
+ *      This file contains the implementation of the DCTransforms interface.
  * 
  *      DCTransforms.c implements the Discrete Cosine Transform (DCT) and 
  *      lienar quantization in order to compress and decompress blocks of 
@@ -66,7 +66,8 @@ DCT_space computeDCT(Pnm_componentvid_flt_pixels block)
 
  /**************************** quantizeDCT() *********************************
  * 
- *  Purpose: Quantizes the DCT coefficients of a 2x2 image block 
+ *  Purpose: Quantizes the cosine coefficients of a 2x2 image block using the 
+ *           Discrete Cosine Transformation
  * 
  *  Parameters: 
  *        1. a DCT_space struct named "block" which contains four floats:
@@ -135,7 +136,8 @@ Brightness_values computeInverseDCT(DCT_space block)
 
  /*********************** quantizeInverseDCT() *****************************
  * 
- *  Purpose: Quantizes the DCT coefficients of a 2x2 image block 
+ *  Purpose: Quantizes the cosine coefficients of a 2x2 image block using the 
+ *           inverse of a Discrete Cosine Transformation
  *
  *  Parameters: 
  *      1. block -- A DCT_space_int struct which contains four integer values, 

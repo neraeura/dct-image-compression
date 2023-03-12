@@ -8,8 +8,10 @@
  *     CS Logins: narahi01 and dopara01
  *     Date:  March 11, 2023
  *
- *     
- *     
+ * 
+ *     This file contains a C implementation of an image compressor. 
+ *     This program performs image compression using Discrete Cosine Transform 
+ *     (DCT) and vector quantization.
  *
  **************************************************************************/
 
@@ -30,6 +32,8 @@
 #include "fileIO.h"
 #include "arith40.h"
 
+#define header "COMP40 Compressed image format 2\n%u %u"
+
 static const unsigned A_SIZE = 9;
 static const unsigned B_SIZE = 5;
 static const unsigned C_SIZE = 5;
@@ -37,14 +41,6 @@ static const unsigned D_SIZE = 5;
 static const unsigned PR_SIZE = 4;
 static const unsigned PB_SIZE = 4;
 static const unsigned MAX_WORD_SIZE = 32;
-
-
-
-typedef struct Codeword {
-        DCT_space_int dct;
-        unsigned avg_pr, avg_pb;
-} Codeword;
-
 
 
  /**************************** packCodeword() *********************************
@@ -59,15 +55,19 @@ typedef struct Codeword {
  * 
  *  Returns: A 32-bit unsigned integer representing the packed codeword
  * 
- *  Effects: This function does not have any side effects. It does not modify 
- *           any variables or data outside of its scope.
- *  Expects:  
+ *  Effects: The function will throw a Bitpack_Overflow exception if it tries to 
+ *           pack the Codeword struct into a 32-bit word and there are not 
+ *           enough bits available to do so.
+ *  
+ * Expects: A valid word with sufficient amount of bits to pack into a 
+ *          Codeword.
  * 
  ****************************************************************************/
 uint32_t packCodeword(Codeword word)
 {
         uint32_t raw_word = 0;
         unsigned bit_count = MAX_WORD_SIZE;
+
 
         raw_word = Bitpack_newu(raw_word, A_SIZE, bit_count -= A_SIZE, 
                                                                 word.dct.a);
@@ -127,7 +127,8 @@ void compressImage(A2Methods_UArray2 original_image,
                 height -= height % 2;
         }
 
-        printf("COMP40 Compressed image format 2\n%u %u", width, height);
+        fprintf(stdout, header, width, height);
+        fprintf(stdout, "\n");
 
         for (int row = 0; row < height; row += 2) { 
                 for (int col = 0; col < width; col += 2) {

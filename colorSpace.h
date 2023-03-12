@@ -42,17 +42,25 @@ typedef struct Pnm_rgb_int_pixels {
 } Pnm_rgb_int_pixels;
 
 
+float 
+computePR_avg(Pnm_componentvid_flt_pixels block);
+
+float 
+computePB_avg(Pnm_componentvid_flt_pixels block);
+
+Pnm_rgb_flt_pixels 
+create_rgbflt_pixels(Pnm_rgb p1, Pnm_rgb p2, Pnm_rgb p3, 
+                     Pnm_rgb p4, unsigned denominator);
+
+Pnm_componentvid_flt_pixels 
+create_compvid_pixels_comp(Pnm_rgb_flt_pixels block);
+
+Pnm_componentvid_flt_pixels 
+create_compvid_pixels_decomp(float pr, float pb, Brightness_values brightness);
 
 
-float computePR_avg(Pnm_componentvid_flt_pixels block);
-float computePB_avg(Pnm_componentvid_flt_pixels block);
-Pnm_rgb_flt_pixels create_rgbflt_pixels(Pnm_rgb p1, Pnm_rgb p2, Pnm_rgb p3, 
-                                        Pnm_rgb p4, unsigned denominator);
-Pnm_componentvid_flt_pixels create_compvid_pixels_comp(Pnm_rgb_flt_pixels block);
-Pnm_componentvid_flt_pixels create_compvid_pixels_decomp(float pr, float pb,
-                                                Brightness_values brightness);
-Pnm_rgb_int_pixels create_rgbint_pixels(Pnm_componentvid_flt_pixels block,
-                                                        unsigned denominator);
+Pnm_rgb_int_pixels 
+create_rgbint_pixels(Pnm_componentvid_flt_pixels block, unsigned denominator);
                                                         
 
 #endif

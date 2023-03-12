@@ -175,11 +175,11 @@ bool Bitpack_fitss(int64_t n, unsigned width)
  *           word, starting from a specified least significant bit (lsb).
  *         
  *  Parameters: 
- *      1. word -- an unsigned 64-bit integer from which bits will be extracted.
- *      2. width -- an unsigned integer representing the width (in bits) of the u
- *                  nsigned integer to be extracted.
+ *      1. word -- an unsigned 64-bit integer from which bits will be extracted
+ *      2. width -- an unsigned integer representing the width (in bits) of the 
+ *                  unsigned integer to be extracted.
  *      2. lsb -- an unsigned integer representing the index of the least 
- *                significant bit of the unsigned integer to be extracted.
+ *                significant bit of the unsigned integer to be extracted
  *   
  *  Returns: An unsigned 64-bit integer representing the extracted unsigned 
  *           integer.
@@ -196,7 +196,8 @@ bool Bitpack_fitss(int64_t n, unsigned width)
 uint64_t Bitpack_getu(uint64_t word, unsigned width, unsigned lsb)
 {
         assert(width <= MAX_BYTES);
-        assert(lsb + width <= MAX_BYTES);
+        unsigned shift_diff = lsb + width;
+        assert(shift_diff <= MAX_BYTES);
         uint64_t aligned = shift_left(word, (MAX_BYTES - (lsb + width)));
         uint64_t extracted = shift_right_logical(aligned, (MAX_BYTES - width));
         return extracted;
@@ -258,13 +259,15 @@ int64_t Bitpack_gets(uint64_t word, unsigned width, unsigned lsb)
  *
  *  Effects:  It is a Checked Runtime Error if width or the sum of width and lsb 
  *           exceeds MAX_BYTES, the maximum allowable number of bytes, 
- *           (8 bytes or 64 bits)
+ *           (8 bytes or 64 bits). The function will throw an exception 
+ *           Bitpack_Overflow if given a value that does not fit in width bits.
  *
  *  Expects: Assumes that width and lsb are both less than or equal to  
  *           MAX_BYTES. The sum of width and lsb is less than or equal to
  *           MAX_BYTES. 
  ****************************************************************************/
-uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, uint64_t value)
+uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, 
+                                                                uint64_t value)
 {
         unsigned shift_high = lsb + width;
         unsigned shift_low = MAX_BYTES - lsb;
@@ -315,14 +318,16 @@ uint64_t Bitpack_newu(uint64_t word, unsigned width, unsigned lsb, uint64_t valu
  *
  *  Effects: It is a Checked Runtime Error if width or the sum of width and lsb 
  *           exceeds MAX_BYTES, the maximum allowable number of bytes, 
- *           (8 bytes or 64 bits)
+ *           (8 bytes or 64 bits). The function will throw an exception 
+ *           Bitpack_Overflow if given a value that does not fit in width bits.
  *
  *  Expects: Assumes that width and lsb are both less than or equal to  
  *           MAX_BYTES. The sum of width and lsb is less than or equal to
  *           MAX_BYTES. 
  * 
  ****************************************************************************/
-uint64_t Bitpack_news(uint64_t word, unsigned width, unsigned lsb, int64_t value)
+uint64_t Bitpack_news(uint64_t word, unsigned width, unsigned lsb, 
+                                                                int64_t value)
 {
         assert(width <= 64);
         assert(width + lsb <= 64);

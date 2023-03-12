@@ -22,9 +22,11 @@
 
 #include "fileIO.h"
 
+#define header "COMP40 Compressed image format 2\n%u %u"
+
 static const unsigned DENOMINATOR = 255; 
-static const unsigned MAX_WORD_SIZE = 64;
-static const unsigned BYTE_SIZE = 8;
+static const unsigned MAX_WORD_SIZE = 32;
+static const unsigned BYTES = 8;
 
  /**************************** printCodeword() *********************************
  * 
@@ -32,8 +34,6 @@ static const unsigned BYTE_SIZE = 8;
  *  Parameters:
  *      1. A 32-bit unsigned integer named "word", which represents the packed 
  *         codeword that is to be printed.
- *     2.  An unsigned integer named "bits_left", which represents the number of 
- *         bits in the codeword that are to be printed.
  *  Returns: None
  *  Effects: This function outputs the packed codeword to standard output
  *  Expects:  
@@ -41,8 +41,8 @@ static const unsigned BYTE_SIZE = 8;
  ****************************************************************************/
 void printCodeword(uint32_t word) 
 {
-        for (unsigned w = MAX_WORD_SIZE; w > 0; w = w - BYTE_SIZE) {
-                putc(Bitpack_getu(word, BYTE_SIZE, w), stdout);
+        for (int index = MAX_WORD_SIZE - BYTES; index >= 0; index -= BYTES) {
+                putc(Bitpack_getu(word, BYTES, index), stdout);
         }
 }
 
@@ -56,8 +56,6 @@ void printCodeword(uint32_t word)
  *  Parameters: 
  *      1. input - a pointer to a FILE object representing the input file stream 
  *               from which the compressed image blocks are read.
- *     2. bits_left - an unsigned integer that specifies how many bits of the 
- *                    current codeword are still available for reading.
  * 
  *  Returns: An unsigned 64-bit integer that represents the codeword read from 
  *           the input file.
@@ -74,19 +72,21 @@ void printCodeword(uint32_t word)
  *           respect to the compressed image block encoding scheme.
  * 
  ****************************************************************************/
-uint64_t readInCodeword(FILE *input, unsigned bits_left) 
+
+uint32_t readInCodeword(FILE *input) 
 {
 
-        uint64_t raw_word = 0;
-        uint64_t single_byte;
+        uint32_t raw_word = 0;
 
-        for (unsigned w = bits_left; w > 0; w = w - BYTE_SIZE) {
-                single_byte = getc(input);
-                assert(bits_left % 8 == 0);
-                assert((int) single_byte != EOF);
-                /* within byte, align codeword */
-                single_byte = single_byte << w;
-                raw_word = raw_word | single_byte;
+        for (int w = MAX_WORD_SIZE - BYTES; w >= 0; w -= BYTES) {
+                int single_byte = getc(input);
+                assert(single_byte != EOF);
+                /* This is done to ensure that a value is represented as an 
+                unsigned byte or ASCII character code with a value between 
+                                        0 and 255                       */
+                single_byte = (single_byte < 0) ? 0 : 
+                                ((single_byte > 255) ? 255 : single_byte);
+                raw_word = raw_word | single_byte << w;
         }
 
         return raw_word;
@@ -120,12 +120,11 @@ uint64_t readInCodeword(FILE *input, unsigned bits_left)
 Pnm_ppm readHeader(FILE *compressed_file)
 {
         unsigned height, width;
-        int read = fscanf(compressed_file, "COMP40 Compressed image format 2\n%u %u", 
-                                &width, &height); 
+        int read = fscanf(compressed_file, header, &width, &height);
         assert(read == 2);
         int c = getc(compressed_file);
-        if (c != '\n') { // cope with bad student format
-                fprintf(stderr, "Newline missing from compressed-image header\n");
+        if (c != '\n') { 
+                fprintf(stderr, "Error: Missing a newline from header\n");
                 ungetc(c, compressed_file);
         }
 
@@ -133,10 +132,12 @@ Pnm_ppm readHeader(FILE *compressed_file)
         A2Methods_UArray2 pixels = methods->new(width, height,
                                         sizeof(struct Pnm_rgb));
         Pnm_ppm pixmap = malloc(sizeof(*pixmap));
+        assert(pixmap);
         pixmap->height = height;
         pixmap->width = width;
         pixmap->denominator = DENOMINATOR;
+        pixmap->methods = methods;
         pixmap->pixels = pixels;
-        
+
         return pixmap;
 }

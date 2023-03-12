@@ -64,9 +64,13 @@ all: arith
 ppmdiff: ppmdiff.o uarray2b.o uarray2.o a2plain.o 
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 	
-arith: 40image.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o \
+40image: 40image.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o \
 	bitpack.o fileIO.o colorSpace.o DCTransforms.o sharedData.o
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+# 40image-6: 40image-6.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o \
+# 	bitpack.o fileIO.o colorSpace.o DCTransforms.o sharedData.o
+# 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 uarray2.o: uarray2.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c $< -o $@

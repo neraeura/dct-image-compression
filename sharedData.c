@@ -1,4 +1,12 @@
-
+ /**************************************************************************
+ *                      
+ *                              sharedData.c
+ * 
+ *      Contains data structures and functions needed by multiple modules
+ *      responsible for carrying out vital phases of compression and 
+ *      decompression.
+ * 
+ ****************************************************************************/
 
 #include "sharedData.h"
 
