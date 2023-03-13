@@ -34,10 +34,10 @@
 
 #define header "COMP40 Compressed image format 2\n%u %u"
 
-static const unsigned A_SIZE = 9;
-static const unsigned B_SIZE = 5;
-static const unsigned C_SIZE = 5;
-static const unsigned D_SIZE = 5;
+static const unsigned A_SIZE = 6;
+static const unsigned B_SIZE = 6;
+static const unsigned C_SIZE = 6;
+static const unsigned D_SIZE = 6;
 static const unsigned PR_SIZE = 4;
 static const unsigned PB_SIZE = 4;
 static const unsigned MAX_WORD_SIZE = 32;
