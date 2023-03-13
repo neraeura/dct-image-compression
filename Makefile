@@ -49,7 +49,7 @@ INCLUDES = $(shell echo *.h)
 
 ############### Rules ###############
 
-all: arith
+all: 40image-6 40image
 
 
 ## Compile step (.c files -> .o files)
@@ -68,9 +68,9 @@ ppmdiff: ppmdiff.o uarray2b.o uarray2.o a2plain.o
 	bitpack.o fileIO.o colorSpace.o DCTransforms.o sharedData.o
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
-# 40image-6: 40image-6.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o \
-# 	bitpack.o fileIO.o colorSpace.o DCTransforms.o sharedData.o
-# 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+40image-6: 40image-6.o uarray2b.o uarray2.o a2plain.o compression.o decompression.o \
+	bitpack.o fileIO.o colorSpace.o DCTransforms.o sharedData.o
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 uarray2.o: uarray2.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c $< -o $@
