@@ -1,5 +1,6 @@
 
-echo -e "--------------------------------------\n"echo -e "segfault.jpg\n"
+echo -e "--------------------------------------\n"
+echo -e "segfault.jpg\n"
 djpeg /comp/40/bin/images/segfault.jpg > test1.ppm
 djpeg /comp/40/bin/images/segfault.jpg | ./40image -c > test.compress
 ./40image -d test.compress > test.ppm
