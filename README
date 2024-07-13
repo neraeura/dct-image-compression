@@ -1,21 +1,4 @@
-Partners:
-
-Partner 1:  Daniel Opara      Login dopara01
-
-Partner 2:  Nora A-Rahim      Login narahim01
-
-*****************************************************************************
-
-Acknowledgments
----------------
-        Received help from TAs, notably Jason, MJ, Sruthi, and Randy
-        Used StackOverflow and GeeksforGeeks to aid in debugging
-        
-Implementation
---------------
-        As far as we know, both the compression and decompression 
-        processes have been fully and accurately executed.
-
+Developers: Nora A-Rahim, Daniel Opara
 Architecture
 ------------
         The program was structured into seperate modules wherein each individual 
